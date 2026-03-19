@@ -1,6 +1,6 @@
 {
   "name": "benchmark-runner",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "A program for running energy consumption benchmarks on several different websites",
   "main": "index.ts",
@@ -10,20 +10,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FrameworkBench-RepPack/benchmark-runner.git"
+    "url": "git+https://github.com/FrameworkBenchFullStack-RepPack/benchmark-runner.git"
   },
   "license": "MIT",
   "engines": {
     "node": "=24.11.1"
   },
   "bugs": {
-    "url": "https://github.com/FrameworkBench-RepPack/benchmark-runner/issues"
+    "url": "https://github.com/FrameworkBenchFullStack-RepPack/benchmark-runner/issues"
   },
-  "homepage": "https://github.com/FrameworkBench-RepPack/benchmark-runner#readme",
-  "workspaces": [
-    "test-sites",
-    "test-sites/sites/*"
-  ],
+  "homepage": "https://github.com/FrameworkBenchFullStack-RepPack/benchmark-runner#readme",
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/selenium-webdriver": "^4.35.4",
@@ -33,7 +29,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "selenium-webdriver": "^4.38.0",
-    "test-sites": "*"
+    "selenium-webdriver": "^4.38.0"
   }
 }

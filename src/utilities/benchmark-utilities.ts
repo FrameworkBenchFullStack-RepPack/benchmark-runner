@@ -48,6 +48,24 @@ interface ProfilerWrapperOptions {
    * @returns A Promise<void>
    */
   afterBM?: (driver: Driver) => Promise<void>;
+
+  /**
+   * Callback function to set result output path in measuring tool
+   * @returns void
+   */
+  setServerResultPath: (path: string) => void;
+
+  /**
+   * Callback function to start energy measurement of the backend server
+   * @returns void
+   */
+  startServerMeasurement: () => void;
+
+  /**
+   * Callback function to stop energy measurement of the backend server
+   * @returns void
+   */
+  stopServerMeasurement: () => void;
 }
 
 /**
@@ -61,21 +79,25 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
     throw new Error("Failed to initialize Driver");
   }
 
+  const geckoOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}.json`;
+  const serverOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}_server.csv`;
+
   try {
-    // Before benchmark
+    // Before benchmark / set server measurement output path
+    input.setServerResultPath(serverOutputPath);
     if (input.beforeBM) await input.beforeBM(driver);
 
-    // Configure and start profiler
+    // Configure and start profiler and server measurements
     const profilerHandler = new ProfilerHandler(driver);
+    input.startServerMeasurement();
     await profilerHandler.start(input.profilerOptions);
 
     // Run benchmark
     await input.performBM(driver);
 
-    // Stop profiler and store data
-    await profilerHandler.end(
-      `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}.json`,
-    );
+    // Stop profiler and server and store data
+    input.stopServerMeasurement();
+    await profilerHandler.end(geckoOutputPath);
 
     // Clean up after the test
     if (input.afterBM) await input.afterBM(driver);

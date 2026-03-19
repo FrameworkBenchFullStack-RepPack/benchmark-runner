@@ -9,7 +9,7 @@ A CLI tool for running performance-based benchmarks in the Firefox Browser using
 To clone the repository run the following git command:
 
 ```bash
-git clone https://github.com/FrameworkBench-RepPack/benchmark-runner.git
+git clone https://github.com/FrameworkBenchFullStack-RepPack/benchmark-runner.git
 cd ./benchmark-runner
 ```
 
@@ -18,9 +18,12 @@ cd ./benchmark-runner
 After cloning, initialize and install dependencies:
 
 ```bash
-git submodule update --init --remote --merge
 npm install
 ```
+
+### 3. (Optional) Obtain an executable of process-energy-measurement
+
+To enable energy measurement of the server process, an executable of process-energy-measurement must be provided. To obtain one, follow the guide in the [process-energy-measurement repository](https://github.com/FrameworkBenchFullStack-RepPack/process-energy-measurement).
 
 ## Running the Benchmark Runner
 
@@ -39,7 +42,7 @@ npm run bm -- --help
 This outputs the following:
 
 ```
-> benchmark-runner@1.0.0 bm
+> benchmark-runner@2.0.0 bm
 > tsx src/index.ts --help
 
 Usage: Benchmark Runner [options]
@@ -47,16 +50,22 @@ Usage: Benchmark Runner [options]
 A CLI for running performance focused benchmarks in the Firefox browser, using selenium
 
 Options:
-  -V, --version                   output the version number
-  -p, --port                      specify port used for serving the websites
-  --entries <entries>             specify the buffer size used in the profiler (default: "20000000")
-  --interval <interval>           specify the profiler logging interval (ms) (default: "100")
-  --features <features...>        specify the logged features. Available features: stackwalk, js, cpu, memory, nostacksampling, mainthreadio, fileioall, nomarkerstacks, seqstyle, screenshots, ipcmessages, jsallocations, audiocallbacktracing, bandwidth, sandbox, flows, cpuallthreads, samplingallthreads, markersallthreads, unregisteredthreads, processcpu, power, tracing (default: ["power"])
-  --threads <threads...>          specify the logged threads. Available threads: GeckoMain, Compositor, DOM Worker, Renderer, RendererBackend, Timer, StyleThread, Socket Thread, StreamTrans, ImgDecoder, DNS Resolver, TaskController (default: ["GeckoMain"])
-  --repetitions <repetitions...>  specify the number of test repetitions (default: "1")
-  --benchmarks <benchmarks...>    specify the benchmarks. Available benchmarks: navigate-all-pages, subpage-faq, subpage-list, subpage-live, subpage-static, subpage-tooltip
-  --frameworks <frameworks...>    specify the frameworks. Available frameworks: qwik-qwik-city, svelte-astro, svelte-sveltekit, svelte-vite-svelte5-router, vanilla, vanilla-astro, vanilla-vite, vue-astro, vue-nuxt, vue-vite
-  -h, --help                      display help for command
+  -V, --version                        output the version number
+  -p, --port                           specify port used for serving the websites
+  -d, --debug                          launch browser instances with debugger
+  --entries <entries>                  specify the buffer size used in the profiler (default: "20000000")
+  --interval <interval>                specify the profiler logging interval (ms) (default: "100")
+  --features <features...>             specify the logged features. Available features: stackwalk, js, cpu, memory, nostacksampling, mainthreadio, fileioall, nomarkerstacks, seqstyle,
+                                       screenshots, ipcmessages, jsallocations, audiocallbacktracing, bandwidth, sandbox, flows, cpuallthreads, samplingallthreads, markersallthreads,
+                                       unregisteredthreads, processcpu, power, tracing (default: ["power","bandwidth"])
+  --threads <threads...>               specify the logged threads. Available threads: GeckoMain, Compositor, DOM Worker, Renderer, RendererBackend, Timer, StyleThread, Socket Thread,
+                                       StreamTrans, ImgDecoder, DNS Resolver, TaskController (default: ["GeckoMain"])
+  --repetitions <repetitions...>       specify the number of test repetitions (default: "1")
+  --benchmarks <benchmarks...>         specify the benchmarks. Available benchmarks: navigate-all-pages, navigate-static, subpage-faq, subpage-home, subpage-list, subpage-live,
+                                       subpage-tooltips
+  --test-sites <test-sites...>         specify the test-sites. Available test-sites: test
+  --process-energy-measurement <path>  path to the process-energy-measurement executable. Enables measuring the server process
+  -h, --help                           display help for command
 ```
 
 ## License

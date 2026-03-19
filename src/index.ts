@@ -1,6 +1,10 @@
 import path from "path";
 import { exec } from "child_process";
 import { Command } from "commander";
+import { existsSync } from "fs";
+
+import type { TestSiteConfigs } from "./types/test-sites";
+import TestSites from "../test-sites";
 
 import {
   ProfilerFeatures,
@@ -13,7 +17,6 @@ import {
   getBenchmarkNames,
   validateBenchmarks,
 } from "./utilities/benchmark-file-helper";
-import { listSites as getFrameworks } from "test-sites/listSites.ts";
 import {
   BuilderOptions,
   defaultSettings as defaultBuilderOptions,
@@ -28,8 +31,9 @@ export type InputOptions = {
   driverOptions: BuilderOptions;
   repetitions: number;
   chosenBenchmarks: string[] | undefined;
-  chosenFrameworks: string[] | undefined;
+  chosenFrameworks: TestSiteConfigs | undefined;
   benchmarksPath: string;
+  processEnergyMeasurementPath: string | undefined;
 };
 
 const inputOptions: InputOptions = {
@@ -45,6 +49,7 @@ const inputOptions: InputOptions = {
   chosenBenchmarks: undefined,
   chosenFrameworks: undefined,
   benchmarksPath: BENCHMARKS_PATH,
+  processEnergyMeasurementPath: undefined,
 };
 
 const program = new Command();
@@ -92,8 +97,12 @@ const program = new Command();
       `specify the benchmarks. Available benchmarks: ${(await getBenchmarkNames(BENCHMARKS_PATH)).join(", ")}`,
     )
     .option(
-      "--frameworks <frameworks...>",
-      `specify the frameworks. Available frameworks: ${(await getFrameworks()).join(", ")}`,
+      "--test-sites <test-sites...>",
+      `specify the test-sites. Available test-sites: ${Object.keys(TestSites).join(", ")}`,
+    )
+    .option(
+      "--process-energy-measurement <path>",
+      `path to the process-energy-measurement executable. Enables measuring the server process`,
     );
 
   // Parse program and extract options
@@ -225,54 +234,46 @@ const program = new Command();
   }
 
   /** Handle framework flag */
-  if (options.frameworks) {
-    const frameworks = options.frameworks;
-    if (!Array.isArray(frameworks)) {
-      throw new Error(`"${frameworks}" is not an array`);
+  if (options.testSites) {
+    const testSites = options.testSites;
+    if (!Array.isArray(testSites)) {
+      throw new Error(`"${testSites}" is not an array`);
     }
 
-    const validFrameworks = await getFrameworks();
+    const validFrameworks = Object.keys(TestSites);
 
-    if (
-      !frameworks.every(
-        (f) => typeof f === "string" && validFrameworks.includes(f),
-      )
-    ) {
-      throw new Error(`"${frameworks} contain an invalid framework"`);
+    const testSiteConfigs: TestSiteConfigs = {};
+
+    for (const testSite of testSites) {
+      if (typeof testSite !== "string" || !validFrameworks.includes(testSite))
+        throw new Error(`"${testSites} contain an invalid framework"`);
+
+      // Using ! as we are sure that it is defined
+      testSiteConfigs[testSite] = TestSites[testSite]!;
     }
 
-    inputOptions.chosenFrameworks = frameworks;
+    inputOptions.chosenFrameworks = testSiteConfigs;
   }
 
-  async function installDependencies() {
-    await new Promise<void>((resolve, reject) => {
-      exec("npm i", { cwd: TEST_SITES_PATH }, (error, stdout, stderr) => {
-        if (error) reject(error);
-        resolve();
-      });
-    });
-  }
-
-  async function buildSites() {
-    await new Promise<void>((resolve, reject) => {
-      exec(
-        "npm run build",
-        { cwd: TEST_SITES_PATH },
-        (error, stdout, stderr) => {
-          if (error) reject(error);
-          resolve();
-        },
+  /** Handle process energy measurement flag */
+  if (options.processEnergyMeasurement) {
+    if (typeof options.processEnergyMeasurement !== "string") {
+      throw new Error(
+        `"${options.processEnergyMeasurement}" is not a valid executable path - is not a string`,
       );
-    });
+    }
+
+    if (!existsSync(options.processEnergyMeasurement)) {
+      throw new Error(
+        `"${options.processEnergyMeasurement}" is not a valid executable path - is not valid path to a file`,
+      );
+    }
+
+    inputOptions.processEnergyMeasurementPath =
+      options.processEnergyMeasurement;
   }
 
   console.log("Successfully parsed input parameters");
-
-  console.log("Installing dependencies");
-  await installDependencies();
-
-  console.log("Building static sites");
-  await buildSites();
 
   console.log("Starting benchmark");
   await startBenchmark(inputOptions);
