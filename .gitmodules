@@ -1,3 +1,0 @@
-[submodule "test-sites"]
-	path = test-sites
-	url = https://github.com/FrameworkBench-RepPack/test-sites.git
