@@ -15,7 +15,6 @@ export default async function benchmark(options: BenchmarkInput) {
   };
 
   const performTest = async (driver: Driver) => {
-    // await promisifiedTimeout(600_000);
     await loadPage(driver, options.link + "/static-1/");
 
     // A short visit
