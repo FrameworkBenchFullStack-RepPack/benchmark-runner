@@ -18,6 +18,7 @@ cd ./benchmark-runner
 After cloning, initialize and install dependencies:
 
 ```bash
+git submodule update --init --remote --merge
 npm install
 ```
 

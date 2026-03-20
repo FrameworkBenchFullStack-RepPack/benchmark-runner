@@ -1,0 +1,6 @@
+[submodule "submodules/test-site-astro-htmx"]
+	path = submodules/test-site-astro-htmx
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-astro-htmx.git
+[submodule "submodules/database-seed"]
+	path = submodules/database-seed
+	url = https://github.com/FrameworkBenchFullStack-RepPack/database-seed.git

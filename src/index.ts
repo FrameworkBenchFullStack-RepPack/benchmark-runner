@@ -1,10 +1,9 @@
 import path from "path";
-import { exec } from "child_process";
 import { Command } from "commander";
 import { existsSync } from "fs";
 
-import type { TestSiteConfigs } from "./types/test-sites";
-import TestSites from "../test-sites";
+import type { TestSiteConfigsType } from "./types/test-sites";
+import * as config from "../config";
 
 import {
   ProfilerFeatures,
@@ -21,8 +20,8 @@ import {
   BuilderOptions,
   defaultSettings as defaultBuilderOptions,
 } from "./utilities/browser-utilities/driver-builder";
+import { createAsyncProcess, Stream } from "./utilities/process-helper";
 
-const TEST_SITES_PATH = "./test-sites/" as const;
 const BENCHMARKS_PATH = path.resolve(import.meta.dirname, "./benchmarks/");
 
 export type InputOptions = {
@@ -31,7 +30,7 @@ export type InputOptions = {
   driverOptions: BuilderOptions;
   repetitions: number;
   chosenBenchmarks: string[] | undefined;
-  chosenFrameworks: TestSiteConfigs | undefined;
+  chosenFrameworks: TestSiteConfigsType | undefined;
   benchmarksPath: string;
   processEnergyMeasurementPath: string | undefined;
 };
@@ -98,7 +97,7 @@ const program = new Command();
     )
     .option(
       "--test-sites <test-sites...>",
-      `specify the test-sites. Available test-sites: ${Object.keys(TestSites).join(", ")}`,
+      `specify the test-sites. Available test-sites: ${Object.keys(config.TestSites).join(", ")}`,
     )
     .option(
       "--process-energy-measurement <path>",
@@ -240,16 +239,16 @@ const program = new Command();
       throw new Error(`"${testSites}" is not an array`);
     }
 
-    const validFrameworks = Object.keys(TestSites);
+    const validFrameworks = Object.keys(config.TestSites);
 
-    const testSiteConfigs: TestSiteConfigs = {};
+    const testSiteConfigs: TestSiteConfigsType = {};
 
     for (const testSite of testSites) {
       if (typeof testSite !== "string" || !validFrameworks.includes(testSite))
         throw new Error(`"${testSites} contain an invalid framework"`);
 
       // Using ! as we are sure that it is defined
-      testSiteConfigs[testSite] = TestSites[testSite]!;
+      testSiteConfigs[testSite] = config.TestSites[testSite]!;
     }
 
     inputOptions.chosenFrameworks = testSiteConfigs;
@@ -274,6 +273,36 @@ const program = new Command();
   }
 
   console.log("Successfully parsed input parameters");
+
+  // Run test-site prepare script
+  console.log("Preparing test-sites");
+  const prepareSites = async () => {
+    const promises = Object.entries(config.TestSites).map(
+      async ([name, testSiteConfig]) => {
+        if (!testSiteConfig.prepare) return Promise.resolve();
+
+        return createAsyncProcess({
+          command: testSiteConfig.prepare,
+          cwd: `${config.SUBMODULES_PATH}/${name}`,
+        });
+      },
+    );
+
+    await Promise.all(promises);
+  };
+
+  await prepareSites();
+
+  // Run db prepare script
+  if (config.DatabaseConfig) {
+    console.log("Preparing database");
+    await createAsyncProcess({
+      command: config.DatabaseConfig.prepare.command,
+      cwd: `${config.SUBMODULES_PATH}/${config.DatabaseConfig.submoduleName}`,
+      regex: config.DatabaseConfig.prepare.regex,
+      stream: Stream.stderr,
+    });
+  }
 
   console.log("Starting benchmark");
   await startBenchmark(inputOptions);

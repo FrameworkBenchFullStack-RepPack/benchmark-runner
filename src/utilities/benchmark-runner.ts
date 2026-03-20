@@ -1,21 +1,26 @@
 import fs from "node:fs";
 import path from "node:path";
+
+import * as config from "../../config";
 import { Worker } from "worker_threads";
+
 import { InputOptions } from "../index";
 import {
+  BaseWorkerData,
+  MeasuringWorkerData,
   MessageType,
   type MessageStructures,
 } from "./server-worker/worker-types";
 import BenchmarkInput from "../benchmarks/benchmark-types";
 
 import { loadBenchmarks } from "./benchmark-file-helper";
-import TestSites from "../../test-sites";
-import type { TestSiteConfig } from "../types/test-sites";
+import type { TestSiteConfigType } from "../types/test-sites";
 import { once } from "node:events";
+import { createAsyncProcess, Stream } from "./process-helper";
 
 const NON_MEASURING_SERVER_WORKER_PATH = path.resolve(
   import.meta.dirname,
-  "./server-worker/server-worker.ts",
+  "./server-worker/regular-server-worker.ts",
 );
 
 const MEASURING_SERVER_WORKER_PATH = path.resolve(
@@ -39,29 +44,45 @@ type ServerController = {
 
 function createServerController(
   options: InputOptions,
-  testSiteConfig: TestSiteConfig,
+  testSiteName: string,
+  testSiteConfig: TestSiteConfigType,
 ): ServerController {
-  const measuringServer = options.processEnergyMeasurementPath !== undefined;
+  const isMeasuringServer = options.processEnergyMeasurementPath !== undefined;
 
-  const workerPath = measuringServer
+  const workerPath = isMeasuringServer
     ? MEASURING_SERVER_WORKER_PATH
     : NON_MEASURING_SERVER_WORKER_PATH;
 
-  const worker = new Worker(workerPath, {
-    workerData: {
+  // Prepare environment variables
+  const env = {
+    PORT: options.serverPort.toString(),
+    ...(config.DatabaseConfig && {
+      DATABASE_URL: config.DatabaseConfig.connectionString,
+    }),
+  };
+
+  // Prepare remaining worker data
+  const workerData: BaseWorkerData | MeasuringWorkerData = {
+    measurementInterval: options.profilerOptions.interval,
+    serverCommand: testSiteConfig.start,
+    startDetectionRegex: testSiteConfig.startDetectionRegex,
+    serverPort: options.serverPort,
+    env,
+    siteDir: `${config.SUBMODULES_PATH}/${testSiteName}`,
+    ...(isMeasuringServer && {
       processMeasurementExecutable: options.processEnergyMeasurementPath,
-      measurementInterval: options.profilerOptions.interval,
-      serverCommand: testSiteConfig.startCommand,
-      startDetectionRegex: testSiteConfig.startDetectionRegex,
-      serverPort: options.serverPort,
-    },
+    }),
+  };
+
+  const worker = new Worker(workerPath, {
+    workerData,
   });
 
   const post = <T extends MessageType>(message: MessageStructures[T][0]) => {
     worker.postMessage(message);
   };
 
-  const setResultPath = measuringServer
+  const setResultPath = isMeasuringServer
     ? (path: string) =>
         post({
           type: MessageType.SetOutputPath,
@@ -71,11 +92,11 @@ function createServerController(
         })
     : () => {};
 
-  const startMeasurement = measuringServer
+  const startMeasurement = isMeasuringServer
     ? () => post({ type: MessageType.Start })
     : () => {};
 
-  const stopMeasurement = measuringServer
+  const stopMeasurement = isMeasuringServer
     ? () => post({ type: MessageType.Stop })
     : () => {};
 
@@ -131,18 +152,33 @@ export default async function startBenchmark(options: InputOptions) {
   if (options.processEnergyMeasurementPath)
     console.log("Server process energy measurement enabled");
 
+  /** Start database if necessary */
+  if (config.DatabaseConfig) {
+    console.log("Starting database");
+    await createAsyncProcess({
+      command: config.DatabaseConfig.start.command,
+      regex: config.DatabaseConfig.start.regex,
+      cwd: `${config.SUBMODULES_PATH}/${config.DatabaseConfig.submoduleName}`,
+      stream: Stream.stderr,
+    });
+  }
+
   /** Make sure the results folder exists */
   if (!fs.existsSync(RESULTS_ROOT)) fs.mkdirSync(RESULTS_ROOT);
   if (!fs.existsSync(RESULTS_PATH)) fs.mkdirSync(RESULTS_PATH);
 
   /** Determine test-sites to be benchmarked */
-  const testSites = options.chosenFrameworks || TestSites;
+  const testSites = options.chosenFrameworks || config.TestSites;
 
   /** Loop through every repetitions */
   for (let repetition = 1; repetition <= options.repetitions; repetition++) {
     /** Loop through every test-site and perform the benchmark */
     for (const [testSiteName, testSiteConfig] of Object.entries(testSites)) {
-      const server = createServerController(options, testSiteConfig);
+      const server = createServerController(
+        options,
+        testSiteName,
+        testSiteConfig,
+      );
 
       await server.waitUntilReady();
 
@@ -179,6 +215,17 @@ export default async function startBenchmark(options: InputOptions) {
         // Terminate server
         await server.terminate();
       }
+    }
+
+    /** Start database if necessary */
+    if (config.DatabaseConfig) {
+      console.log("Resetting database");
+      await createAsyncProcess({
+        command: config.DatabaseConfig.reset.command,
+        regex: config.DatabaseConfig.reset.regex,
+        cwd: `${config.SUBMODULES_PATH}/${config.DatabaseConfig.submoduleName}`,
+        stream: Stream.stderr,
+      });
     }
   }
 }
