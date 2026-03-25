@@ -10,7 +10,7 @@ import {
 import { spawn } from "child_process";
 
 const logError = (...args: string[]) => {
-  console.error("Server worker error - ,", ...args);
+  console.error(...args);
 };
 
 (async () => {
@@ -20,9 +20,9 @@ const logError = (...args: string[]) => {
     data.processMeasurementExecutable,
     [
       `--command=${data.serverCommand}`,
-      `--startRegex=${data.startDetectionRegex}`,
+      `--start-regex=${data.startDetectionRegex}`,
       `--interval=${data.measurementInterval}`,
-      `--processDir=${data.siteDir}`,
+      `--process-dir=${data.siteDir}`,
     ],
     {
       shell: false,
