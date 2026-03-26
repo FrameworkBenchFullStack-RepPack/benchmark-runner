@@ -4,3 +4,30 @@
 [submodule "submodules/database-seed"]
 	path = submodules/database-seed
 	url = https://github.com/FrameworkBenchFullStack-RepPack/database-seed.git
+[submodule "submodules/test-site-asp-net"]
+	path = submodules/test-site-asp-net
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-asp-net.git
+[submodule "submodules/test-site-nextjs-htmx"]
+	path = submodules/test-site-nextjs-htmx
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-nextjs-htmx.git
+[submodule "submodules/test-site-ruby-rails-hotwire"]
+	path = submodules/test-site-ruby-rails-hotwire
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-ruby-rails-hotwire.git
+[submodule "submodules/test-site-ruby-rails-htmx"]
+	path = submodules/test-site-ruby-rails-htmx
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-ruby-rails-htmx.git
+[submodule "submodules/test-site-laravel-livewire"]
+	path = submodules/test-site-laravel-livewire
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-laravel-livewire.git
+[submodule "submodules/test-site-laravel-htmx"]
+	path = submodules/test-site-laravel-htmx
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-laravel-htmx.git
+[submodule "submodules/test-site-spring-boot-htmx"]
+	path = submodules/test-site-spring-boot-htmx
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-spring-boot-htmx.git
+[submodule "submodules/test-site-django-htmx"]
+	path = submodules/test-site-django-htmx
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-django-htmx.git
+[submodule "submodules/test-site-nextjs"]
+	path = submodules/test-site-nextjs
+	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-nextjs.git
