@@ -1,7 +1,7 @@
 import { parentPort, workerData } from "worker_threads";
 import {
   MessageType,
-  type WorkerData,
+  type BaseWorkerData,
   type MessageStructures,
   checkIncomingJson,
   ProcessMessageTypes,
@@ -14,8 +14,16 @@ const logError = (...args: string[]) => {
 };
 
 (async () => {
-  const data: WorkerData = workerData;
-  const serverProcess = spawn(data.serverCommand, { shell: true });
+  const data: BaseWorkerData = workerData;
+
+  const serverProcess = spawn(data.serverCommand, {
+    cwd: data.siteDir,
+    shell: true,
+    env: {
+      ...process.env,
+      ...data.env,
+    },
+  });
 
   const readyMessage: MessageStructures[typeof MessageType.Ready][0] = {
     type: MessageType.Ready,

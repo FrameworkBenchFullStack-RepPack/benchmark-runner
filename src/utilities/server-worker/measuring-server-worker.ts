@@ -1,7 +1,7 @@
 import { parentPort, workerData } from "worker_threads";
 import {
   MessageType,
-  type WorkerData,
+  type MeasuringWorkerData,
   type MessageStructures,
   checkIncomingJson,
   ProcessMessageTypes,
@@ -10,20 +10,27 @@ import {
 import { spawn } from "child_process";
 
 const logError = (...args: string[]) => {
-  console.error("Server worker error - ,", ...args);
+  console.error(...args);
 };
 
 (async () => {
-  const data: WorkerData = workerData;
+  const data: MeasuringWorkerData = workerData;
 
   const serverProcess = spawn(
     data.processMeasurementExecutable,
     [
-      `--command='${data.serverCommand}'`,
-      `--startRegex='${data.startDetectionRegex}'`,
+      `--command=${data.serverCommand}`,
+      `--start-regex=${data.startDetectionRegex}`,
       `--interval=${data.measurementInterval}`,
+      `--process-dir=${data.siteDir}`,
     ],
-    { shell: true },
+    {
+      shell: false,
+      env: {
+        ...process.env,
+        ...data.env,
+      },
+    },
   );
 
   const readyMessage: MessageStructures[typeof MessageType.Ready][0] = {
@@ -41,7 +48,6 @@ const logError = (...args: string[]) => {
   serverProcess.stdout.on("data", (data) => {
     try {
       const text = data.toString();
-      console.log(text);
       const json = JSON.parse(text);
 
       if (!checkIncomingJson(json)) throw new Error("Invalid message");

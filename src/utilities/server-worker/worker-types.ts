@@ -20,12 +20,17 @@ export type MessageStructures = {
   [MessageType.Terminate]: [DefaultMessage<null>, null];
 };
 
-export type WorkerData = {
-  processMeasurementExecutable: string;
+export type BaseWorkerData = {
   measurementInterval: number;
   serverCommand: string;
   startDetectionRegex: string;
   serverPort: number;
+  siteDir: string;
+  env: Record<string, string>;
+};
+
+export type MeasuringWorkerData = BaseWorkerData & {
+  processMeasurementExecutable: string;
 };
 
 /**
