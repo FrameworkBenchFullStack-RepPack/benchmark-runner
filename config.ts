@@ -30,4 +30,10 @@ export const TestSites: TestSiteConfigsType = {
     startDetectionRegex:
       "(\\[@astrojs\\/node\\] Server listening on http:\\/\\/localhost:)",
   },
+  "test-site-nextjs": {
+    prepare:
+      "npm install-clean && npm run build && cp -r .next/static .next/standalone/.next/",
+    start: "node .next/standalone/server.js",
+    startDetectionRegex: "✓ Ready in ",
+  },
 } as const;

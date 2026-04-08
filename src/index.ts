@@ -283,7 +283,7 @@ const program = new Command();
 
         return createAsyncProcess({
           command: testSiteConfig.prepare,
-          cwd: `${config.SUBMODULES_PATH}/${name}`,
+          cwd: `${config.SUBMODULES_PATH}/${name}/`,
         });
       },
     );
