@@ -65,36 +65,27 @@ export default class ProfilerHandler {
       .join(", ")}]`;
 
     return `
-      Services.profiler.StartProfiler(
-        ${options.entries},
-        ${options.interval},
-        ${featuresArray},
-        ${threadsArray}
-      );
+      return Services.profiler.StartProfiler(
+          ${options.entries},
+          ${options.interval},
+          ${featuresArray},
+          ${threadsArray}
+        );
     `;
   }
 
   #pauseScript(): string {
-    return `
-        Services.profiler.Pause();
-    `;
+    return `return Services.profiler.Pause();`;
   }
 
   #collectDataScript(filePath: string): string {
     // The last argument passed in the 'arguments' list is a callback
     // function to indicate that the async execution has finished.
-    return `
-        var asyncFuncFinishedCallback = arguments[arguments.length - 1];
-        Services.profiler.dumpProfileToFileAsync("${filePath}")
-            .then(asyncFuncFinishedCallback)
-            .catch((e) => asyncFuncFinishedCallback({'error' : e}));
-    `;
+    return `return Services.profiler.dumpProfileToFileAsync("${filePath}");`;
   }
 
   #endScript(): string {
-    return `
-      Services.profiler.StopProfiler();
-    `;
+    return `return Services.profiler.StopProfiler();`;
   }
 
   async start(options: ProfilerOptions) {
@@ -113,7 +104,7 @@ export default class ProfilerHandler {
       this.#pauseScript(),
     );
 
-    await runScriptInChromeAsync(
+    await runScriptInChrome(
       "PROFILER-COLLECT-DATA",
       this.#driver,
       this.#collectDataScript(filePath),
