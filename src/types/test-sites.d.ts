@@ -1,7 +1,7 @@
-export type TestSiteConfigType = {
+export type TestSiteConfig = {
   prepare?: string;
   start: string;
   startDetectionRegex: string;
 };
 
-export type TestSiteConfigsType = Record<string, TestSiteConfigType>;
+export type TestSiteConfigs = Record<string, TestSiteConfig>;

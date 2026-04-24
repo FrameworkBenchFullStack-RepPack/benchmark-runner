@@ -14,7 +14,7 @@ import {
 import BenchmarkInput from "../benchmarks/benchmark-types";
 
 import { loadBenchmarks } from "./benchmark-file-helper";
-import type { TestSiteConfigType } from "../types/test-sites";
+import type { TestSiteConfig } from "../types/test-sites";
 import { once } from "node:events";
 import { createAsyncProcess, Stream } from "./process-helper";
 
@@ -45,7 +45,7 @@ type ServerController = {
 function createServerController(
   options: InputOptions,
   testSiteName: string,
-  testSiteConfig: TestSiteConfigType,
+  testSiteConfig: TestSiteConfig,
 ): ServerController {
   const isMeasuringServer = options.processEnergyMeasurementPath !== undefined;
 
@@ -217,7 +217,7 @@ export default async function startBenchmark(options: InputOptions) {
       }
     }
 
-    /** Start database if necessary */
+    /** Reset database if necessary */
     if (config.DatabaseConfig) {
       console.log("Resetting database");
       await createAsyncProcess({

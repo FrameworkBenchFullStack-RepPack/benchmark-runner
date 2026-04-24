@@ -1,4 +1,4 @@
-import type { TestSiteConfigsType } from "./src/types/test-sites";
+import type { TestSiteConfigs } from "./src/types/test-sites";
 import type { DatabaseConfigType } from "./src/types/database";
 
 export const SUBMODULES_PATH = `${process.cwd()}/submodules` as const;
@@ -23,7 +23,7 @@ export const DatabaseConfig: DatabaseConfigType = {
 /**
  * The key to every configuration must match the
  */
-export const TestSites: TestSiteConfigsType = {
+export const TestSites: TestSiteConfigs = {
   "test-site-astro-htmx": {
     prepare: "npm install-clean && npm run build",
     start: "node ./dist/server/entry.mjs",

@@ -2,7 +2,7 @@ import path from "path";
 import { Command } from "commander";
 import { existsSync } from "fs";
 
-import type { TestSiteConfigsType } from "./types/test-sites";
+import type { TestSiteConfigs } from "./types/test-sites";
 import * as config from "../config";
 
 import {
@@ -30,7 +30,7 @@ export type InputOptions = {
   driverOptions: BuilderOptions;
   repetitions: number;
   chosenBenchmarks: string[] | undefined;
-  chosenFrameworks: TestSiteConfigsType | undefined;
+  chosenFrameworks: TestSiteConfigs | undefined;
   benchmarksPath: string;
   processEnergyMeasurementPath: string | undefined;
 };
@@ -241,7 +241,7 @@ const program = new Command();
 
     const validFrameworks = Object.keys(config.TestSites);
 
-    const testSiteConfigs: TestSiteConfigsType = {};
+    const testSiteConfigs: TestSiteConfigs = {};
 
     for (const testSite of testSites) {
       if (typeof testSite !== "string" || !validFrameworks.includes(testSite))
@@ -276,22 +276,16 @@ const program = new Command();
 
   // Run test-site prepare script
   console.log("Preparing test-sites");
-  const prepareSites = async () => {
-    const promises = Object.entries(config.TestSites).map(
-      async ([name, testSiteConfig]) => {
-        if (!testSiteConfig.prepare) return Promise.resolve();
+  await Promise.all(
+    Object.entries(config.TestSites).map(async ([name, testSiteConfig]) => {
+      if (!testSiteConfig.prepare) return;
 
-        return createAsyncProcess({
-          command: testSiteConfig.prepare,
-          cwd: `${config.SUBMODULES_PATH}/${name}/`,
-        });
-      },
-    );
-
-    await Promise.all(promises);
-  };
-
-  await prepareSites();
+      return createAsyncProcess({
+        command: testSiteConfig.prepare,
+        cwd: `${config.SUBMODULES_PATH}/${name}/`,
+      });
+    }),
+  );
 
   // Run db prepare script
   if (config.DatabaseConfig) {
