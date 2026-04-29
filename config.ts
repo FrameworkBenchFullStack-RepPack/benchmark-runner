@@ -32,9 +32,8 @@ export const DatabaseConfig: DatabaseConfigType = {
 export const TestSites: TestSiteConfigs = {
   "test-site-asp-net": {
     prepare: "cd test-site && dotnet restore",
-    start: "dotnet run",
-    startDetectionRegex:
-      "(\\[@astrojs\\/node\\] Server listening on http:\\/\\/localhost:)",
+    start: "cd test-site && dotnet run",
+    startDetectionRegex: "Application started.",
     environmentVariables: {
       portIdentifier: "PORT",
       start: {
