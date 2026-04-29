@@ -19,19 +19,23 @@ export async function createAsyncProcess({
   env?: { [key: string]: string };
 }) {
   return new Promise<void>((resolve, reject) => {
-    exec(command, { cwd, env }, (error, stdout, stderr) => {
-      if (error) {
-        return reject(error);
-      }
+    exec(
+      command,
+      { cwd, env: { ...env, ...process.env } },
+      (error, stdout, stderr) => {
+        if (error) {
+          return reject(error);
+        }
 
-      if (
-        regex &&
-        !new RegExp(regex).test(stream === Stream.stdout ? stdout : stderr)
-      ) {
-        return reject("Regex did not match stdout");
-      }
+        if (
+          regex &&
+          !new RegExp(regex).test(stream === Stream.stdout ? stdout : stderr)
+        ) {
+          return reject("Regex did not match stdout");
+        }
 
-      resolve();
-    });
+        resolve();
+      },
+    );
   });
 }
