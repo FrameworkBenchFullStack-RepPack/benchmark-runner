@@ -56,9 +56,12 @@ function createServerController(
   // Prepare environment variables
   const env = {
     PORT: options.serverPort.toString(),
-    ...(config.DatabaseConfig && {
-      DATABASE_URL: config.DatabaseConfig.connectionString,
-    }),
+    ...(config.DatabaseConfig
+      ? {
+          DATABASE_URL: config.DatabaseConfig.connectionString,
+        }
+      : {}),
+    ...(testSiteConfig.environmentVariables ?? {}),
   };
 
   // Prepare remaining worker data
