@@ -67,6 +67,7 @@ function createServerController(
 
   // Prepare remaining worker data
   const workerData: BaseWorkerData | MeasuringWorkerData = {
+    logLevel: options.logLevel,
     measurementInterval: options.profilerOptions.interval,
     serverCommand: testSiteConfig.start,
     startDetectionRegex: testSiteConfig.startDetectionRegex,

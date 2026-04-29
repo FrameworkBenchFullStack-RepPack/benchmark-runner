@@ -22,10 +22,12 @@ import {
 } from "./utilities/browser-utilities/driver-builder";
 import { createAsyncProcess, Stream } from "./utilities/process-helper";
 import { ConfigStep } from "./types/database";
+import { LogLevel } from "./utilities/server-worker/worker-types";
 
 const BENCHMARKS_PATH = path.resolve(import.meta.dirname, "./benchmarks/");
 
 export type InputOptions = {
+  logLevel: LogLevel;
   serverPort: number;
   profilerOptions: ProfilerOptions;
   driverOptions: BuilderOptions;
@@ -37,6 +39,7 @@ export type InputOptions = {
 };
 
 const inputOptions: InputOptions = {
+  logLevel: "error",
   serverPort: 0,
   profilerOptions: {
     entries: 0,
@@ -62,6 +65,11 @@ const program = new Command();
     )
     .version("1.0.0")
     .option("-p, --port", "specify port used for serving the websites", "1337")
+    .option(
+      "-l, --log-level",
+      "specify which logs to print to terminal",
+      "error",
+    )
     .option("-d, --debug", "launch browser instances with debugger")
     .option(
       "--entries <entries>",
@@ -125,6 +133,22 @@ const program = new Command();
   /** Handle debug flag */
   if (options.debug) {
     inputOptions.driverOptions.debug = true;
+  }
+
+  /** Handle log-level flag */
+  if (options.logLevel) {
+    const level = options.logLevel;
+
+    if (
+      typeof level === "string" &&
+      (level === "debug" ||
+        level === "info" ||
+        level === "warning" ||
+        level === "error" ||
+        level === "off")
+    ) {
+      inputOptions.logLevel = level;
+    }
   }
 
   /** Handle entries flag */
@@ -297,11 +321,15 @@ const program = new Command();
   console.log("Preparing test-sites");
   await Promise.all(
     Object.entries(config.TestSites).map(async ([name, testSiteConfig]) => {
-      if (!testSiteConfig.prepare) return;
+      const shouldBeTested =
+        inputOptions.chosenFrameworks === undefined ||
+        name in inputOptions.chosenFrameworks;
+
+      if (!shouldBeTested || !testSiteConfig.prepare) return;
 
       return createAsyncProcess({
         command: testSiteConfig.prepare,
-        cwd: `${config.SUBMODULES_PATH}/${name}/`,
+        cwd: path.join(config.SUBMODULES_PATH, name),
         env: testSiteConfig.environmentVariables.prepare,
       });
     }),

@@ -23,6 +23,7 @@ const logError = (...args: string[]) => {
       `--start-regex=${data.startDetectionRegex}`,
       `--interval=${data.measurementInterval}`,
       `--process-dir=${data.siteDir}`,
+      `--log-level=${data.logLevel}`,
     ],
     {
       shell: false,

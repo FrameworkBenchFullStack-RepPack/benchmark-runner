@@ -1,3 +1,5 @@
+export type LogLevel = "debug" | "info" | "warning" | "error" | "off";
+
 export const MessageType = {
   Ready: 0,
   Start: 1,
@@ -21,6 +23,7 @@ export type MessageStructures = {
 };
 
 export type BaseWorkerData = {
+  logLevel: LogLevel;
   measurementInterval: number;
   serverCommand: string;
   startDetectionRegex: string;
