@@ -13,15 +13,15 @@ export const DatabaseConfig: DatabaseConfigType = {
   submoduleName: "database-seed",
   prepare: {
     command: "docker compose up -d",
-    regex: "Container database-seed-db-1  Running",
+    regex: "Running",
   },
   start: {
     command: "docker compose up -d",
-    regex: "Container database-seed-db-1  Running",
+    regex: "Running",
   },
   reset: {
     command: "docker compose up -d",
-    regex: "Container database-seed-db-1  Running",
+    regex: "Running",
   },
   connectionString: `postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}`,
 };
@@ -35,18 +35,51 @@ export const TestSites: TestSiteConfigs = {
     start: "dotnet run",
     startDetectionRegex:
       "(\\[@astrojs\\/node\\] Server listening on http:\\/\\/localhost:)",
-    environmentVariables: { ASPNETCORE_ENVIRONMENT: "Production" },
+    environmentVariables: {
+      portIdentifier: "PORT",
+      start: {
+        ASPNETCORE_ENVIRONMENT: "Production",
+        ConnectionStrings__DefaultConnection: `Host=${DATABASE_HOST};Port=${DATABASE_PORT};Database=${DATABASE_NAME};Username=${DATABASE_USER};Password=${DATABASE_PASSWORD}`,
+      },
+    },
+  },
+  "test-site-ruby-rails-hotwire": {
+    prepare: "bundle install --gemfile Gemfile && bin/rails assets:precompile",
+    start: "bin/thrust bin/rails server",
+    startDetectionRegex: "Server started",
+    environmentVariables: {
+      portIdentifier: "HTTP_PORT",
+      start: {
+        RAILS_ENV: "production",
+        DATABASE_URL: DatabaseConfig.connectionString,
+      },
+      prepare: {
+        RAILS_ENV: "production",
+        DATABASE_URL: DatabaseConfig.connectionString,
+      },
+    },
   },
   "test-site-astro-htmx": {
     prepare: "npm install-clean && npm run build",
-    start: "node ./dist/server/entry.mjs",
-    startDetectionRegex:
-      "(\\[@astrojs\\/node\\] Server listening on http:\\/\\/localhost:)",
+    start: "npm run serve",
+    startDetectionRegex: "Server listening on",
+    environmentVariables: {
+      portIdentifier: "PORT",
+      start: {
+        DATABASE_URL: DatabaseConfig.connectionString,
+      },
+    },
   },
   "test-site-nextjs": {
     prepare:
       "npm install-clean && npm run build && cp -r .next/static .next/standalone/.next/",
     start: "node .next/standalone/server.js",
     startDetectionRegex: "✓ Ready in ",
+    environmentVariables: {
+      portIdentifier: "PORT",
+      start: {
+        DATABASE_URL: DatabaseConfig.connectionString,
+      },
+    },
   },
 } as const;

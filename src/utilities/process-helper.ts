@@ -10,14 +10,16 @@ export async function createAsyncProcess({
   cwd,
   regex,
   stream = Stream.stdout,
+  env,
 }: {
   command: string;
   cwd: string;
   regex?: string;
   stream?: Stream;
+  env?: { [key: string]: string };
 }) {
   return new Promise<void>((resolve, reject) => {
-    exec(command, { cwd }, (error, stdout, stderr) => {
+    exec(command, { cwd, env }, (error, stdout, stderr) => {
       if (error) {
         return reject(error);
       }

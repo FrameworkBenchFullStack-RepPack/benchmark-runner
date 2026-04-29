@@ -21,6 +21,7 @@ import {
   defaultSettings as defaultBuilderOptions,
 } from "./utilities/browser-utilities/driver-builder";
 import { createAsyncProcess, Stream } from "./utilities/process-helper";
+import { ConfigStep } from "./types/database";
 
 const BENCHMARKS_PATH = path.resolve(import.meta.dirname, "./benchmarks/");
 
@@ -274,6 +275,24 @@ const program = new Command();
 
   console.log("Successfully parsed input parameters");
 
+  // Run db prepare and start script
+  if (config.DatabaseConfig) {
+    const dbSteps: [string, ConfigStep][] = [
+      ["Preparing database", config.DatabaseConfig.prepare],
+      ["Starting database", config.DatabaseConfig.start],
+    ];
+
+    for (const [step, configStep] of dbSteps) {
+      console.log(step);
+      await createAsyncProcess({
+        command: configStep.command,
+        cwd: `${config.SUBMODULES_PATH}/${config.DatabaseConfig.submoduleName}`,
+        regex: configStep.regex,
+        stream: Stream.stderr,
+      });
+    }
+  }
+
   // Run test-site prepare script
   console.log("Preparing test-sites");
   await Promise.all(
@@ -283,20 +302,10 @@ const program = new Command();
       return createAsyncProcess({
         command: testSiteConfig.prepare,
         cwd: `${config.SUBMODULES_PATH}/${name}/`,
+        env: testSiteConfig.environmentVariables.prepare,
       });
     }),
   );
-
-  // Run db prepare script
-  if (config.DatabaseConfig) {
-    console.log("Preparing database");
-    await createAsyncProcess({
-      command: config.DatabaseConfig.prepare.command,
-      cwd: `${config.SUBMODULES_PATH}/${config.DatabaseConfig.submoduleName}`,
-      regex: config.DatabaseConfig.prepare.regex,
-      stream: Stream.stderr,
-    });
-  }
 
   console.log("Starting benchmark");
   await startBenchmark(inputOptions);
