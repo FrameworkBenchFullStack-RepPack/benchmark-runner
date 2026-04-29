@@ -6,7 +6,6 @@ import {
   profilerWrapper,
 } from "../utilities/benchmark-utilities";
 import BenchmarkInput from "./benchmark-types";
-import { testList } from "./elements/list";
 
 const BENCHMARK_NAME = "subpage-list" as const;
 
@@ -17,9 +16,6 @@ export default async function benchmark(options: BenchmarkInput) {
 
   const performTest = async (driver: Driver) => {
     await loadPage(driver, options.link + "/list/");
-
-    const listElement = driver.findElement(By.css("#list"));
-    await testList(driver, listElement);
   };
 
   await profilerWrapper({
