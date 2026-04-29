@@ -66,8 +66,8 @@ const program = new Command();
     .version("1.0.0")
     .option("-p, --port", "specify port used for serving the websites", "1337")
     .option(
-      "-l, --log-level",
-      "specify which logs to print to terminal",
+      "-l, --log-level <log-level>",
+      "specify which logs to print to terminal (debug, info, warning, error, off)",
       "error",
     )
     .option("-d, --debug", "launch browser instances with debugger")
