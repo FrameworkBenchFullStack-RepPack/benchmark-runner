@@ -62,11 +62,7 @@ const logError = (...args: string[]) => {
   parentPort?.on("message", async (message) => {
     switch (message?.type) {
       case MessageType.Terminate:
-        const terminateProcess: ProcessMessage = {
-          type: ProcessMessageTypes.terminate,
-        };
-
-        sendMessage(JSON.stringify(terminateProcess));
+        serverProcess.kill();
         break;
     }
   });
