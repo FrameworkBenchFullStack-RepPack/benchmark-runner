@@ -56,6 +56,7 @@ export const TestSites: TestSiteConfigs = {
       prepare: {
         RAILS_ENV: "production",
         DATABASE_URL: DatabaseConfig.connectionString,
+        SECRET_KEY_BASE_DUMMY: "1",
       },
     },
   },
