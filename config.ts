@@ -135,4 +135,21 @@ export const TestSites: TestSiteConfigs = {
       },
     },
   },
+  "test-site-django-htmx": {
+    prepare: {
+      command: "pip install -r requirements.txt",
+      modifyWorkingPath: (p) => path.join(p, "django"),
+    },
+    start: {
+      command: "daphne test_site.asgi:application",
+      modifyWorkingPath: (p) => path.join(p, "django"),
+    },
+    startDetectionRegex: "Listening on TCP address",
+    environmentVariables: {
+      portIdentifier: "PORT",
+      start: {
+        DATABASE_URL: DatabaseConfig.connectionString,
+      },
+    },
+  },
 } as const;
