@@ -152,11 +152,21 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
         command: "python3 -m venv django-venv",
       }),
       new Command({
-        command: "pip3 install -r requirements.txt",
+        command: `"${SUBMODULES_PATH}/test-site-django-htmx/django-venv/bin/python" -m pip install -r requirements.txt`,
         environment: {
-          VIRTUAL_ENV: (p) => path.join(p, "django_env"),
+          VIRTUAL_ENV: (p) => path.join(p, "django-venv"),
           PATH: (p) =>
-            `${path.join(p, "django_env", "bin")}:${process.env.PATH}`,
+            `${path.join(p, "django-venv", "bin")}:${process.env.PATH}`,
+        },
+        modifyWorkingPath: (p) => path.join(p, "django"),
+      }),
+      new Command({
+        command: `"${SUBMODULES_PATH}/test-site-django-htmx/django-venv/bin/python" manage.py collectstatic`,
+        environment: {
+          DATABASE_URL: DATABASE_CONFIG.connectionString,
+          VIRTUAL_ENV: (p) => path.join(p, "django-venv"),
+          PATH: (p) =>
+            `${path.join(p, "django-venv", "bin")}:${process.env.PATH}`,
         },
         modifyWorkingPath: (p) => path.join(p, "django"),
       }),
@@ -165,8 +175,9 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       command: "daphne test_site.asgi:application",
       environment: {
         DATABASE_URL: DATABASE_CONFIG.connectionString,
-        VIRTUAL_ENV: (p) => path.join(p, "django_env"),
-        PATH: (p) => `${path.join(p, "django_env", "bin")}:${process.env.PATH}`,
+        VIRTUAL_ENV: (p) => path.join(p, "django-venv"),
+        PATH: (p) =>
+          `${path.join(p, "django-venv", "bin")}:${process.env.PATH}`,
       },
       modifyWorkingPath: (p) => path.join(p, "django"),
     }),
