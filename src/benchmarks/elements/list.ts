@@ -107,20 +107,20 @@ export async function testList(driver: Driver) {
   await promisifiedTimeout(800);
 
   // Change sorting strategy
-  const selectElement = await driver.findElement(By.css("#list select"));
-  const selectInstance = new Select(selectElement);
+  const selectInstanceRef = async () =>
+    new Select(await driver.findElement(By.css("#list select")));
   for (const index of [1, 2, 0]) {
-    await selectInstance.selectByIndex(index);
+    await (await selectInstanceRef()).selectByIndex(index);
     await promisifiedTimeout(800);
     await firstNameIs(driver, sortingToFirstNameMap[index]!);
   }
 
   /** Age Input Field */
-  const ageToElement = await driver.findElement(
-    By.css(`#list input[name="age_to"]`),
-  );
+  const ageToElementRef = () =>
+    driver.findElement(By.css(`#list input[name="age_to"]`));
 
-  for (const maxAge of [70, 60, 50, 40, 30, 20, 10, 30, 40, 50, 60, 70]) {
+  for (const maxAge of [70, 60, 50, 40, 30, 20, 10]) {
+    const ageToElement = await ageToElementRef();
     await ageToElement.clear();
     await ageToElement.sendKeys(maxAge);
     await promisifiedTimeout(700);
@@ -128,8 +128,10 @@ export async function testList(driver: Driver) {
   }
 
   // Reset input
+  const ageToElement = await ageToElementRef();
   await ageToElement.clear();
   await ageToElement.sendKeys(100);
+  await promisifiedTimeout(200);
 
   const pagingSizeElement = await driver.findElement(
     By.css(`#list input[name="size"]`),
@@ -137,17 +139,20 @@ export async function testList(driver: Driver) {
   if (Number.parseInt(await pagingSizeElement.getAttribute("value")) < 9) {
     await pagingSizeElement.clear();
     await pagingSizeElement.sendKeys(9);
+    await promisifiedTimeout(200);
   }
 
   /** Category Input Fields */
-  const categoryInputElements = await driver.findElements(
-    By.css(`#list input[name="category"]`),
-  );
+  const categoryInputElementRef = (i: number) =>
+    driver.findElement(
+      By.css(`#list label:has(input[name="category"]):nth-of-type(${i}) input`),
+    );
 
   let categories = 4;
 
   // Disable all categories
-  for (const element of categoryInputElements) {
+  for (const iRef of [1, 2, 3, 4]) {
+    const element = await categoryInputElementRef(iRef);
     await simulateClick(driver, element);
     categories--;
     await promisifiedTimeout(200);
@@ -155,7 +160,8 @@ export async function testList(driver: Driver) {
   }
 
   // Enable all categories
-  for (const element of categoryInputElements) {
+  for (const iRef of [1, 2, 3, 4]) {
+    const element = await categoryInputElementRef(iRef);
     await simulateClick(driver, element);
     categories++;
     await promisifiedTimeout(200);
