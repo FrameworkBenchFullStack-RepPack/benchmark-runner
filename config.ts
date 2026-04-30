@@ -71,6 +71,7 @@ export const TestSites: TestSiteConfigs = {
       start: {
         RAILS_ENV: "production",
         DATABASE_URL: DatabaseConfig.connectionString,
+        SECRET_KEY_BASE_DUMMY: "1",
       },
       prepare: {
         RAILS_ENV: "production",
