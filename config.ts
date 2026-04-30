@@ -80,6 +80,35 @@ export const TestSites: TestSiteConfigs = {
       },
     },
   },
+  "test-site-ruby-rails-htmx": {
+    prepare: [
+      {
+        command: "bundle install --gemfile Gemfile",
+      },
+      {
+        command: "rails assets:precompile",
+        modifyWorkingPath: (p) => path.join(p, "bin"),
+      },
+    ],
+    start: {
+      command: "thrust rails server",
+      modifyWorkingPath: (p) => path.join(p, "bin"),
+    },
+    startDetectionRegex: "Server started",
+    environmentVariables: {
+      portIdentifier: "HTTP_PORT",
+      start: {
+        RAILS_ENV: "production",
+        DATABASE_URL: DatabaseConfig.connectionString,
+        SECRET_KEY_BASE_DUMMY: "1",
+      },
+      prepare: {
+        RAILS_ENV: "production",
+        DATABASE_URL: DatabaseConfig.connectionString,
+        SECRET_KEY_BASE_DUMMY: "1",
+      },
+    },
+  },
   "test-site-astro-htmx": {
     prepare: [{ command: "npm install-clean" }, { command: "npm run build" }],
     start: { command: "npm run serve" },
