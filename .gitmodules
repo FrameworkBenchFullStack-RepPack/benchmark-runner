@@ -7,9 +7,6 @@
 [submodule "submodules/test-site-asp-net"]
 	path = submodules/test-site-asp-net
 	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-asp-net.git
-[submodule "submodules/test-site-nextjs-htmx"]
-	path = submodules/test-site-nextjs-htmx
-	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-nextjs-htmx.git
 [submodule "submodules/test-site-ruby-rails-hotwire"]
 	path = submodules/test-site-ruby-rails-hotwire
 	url = https://github.com/FrameworkBenchFullStack-RepPack/test-site-ruby-rails-hotwire.git
