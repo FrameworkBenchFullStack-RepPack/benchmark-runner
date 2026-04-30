@@ -71,6 +71,13 @@ const logError = (...args: string[]) => {
     serverProcess.stdin.write(m + "\n");
   };
 
+  const terminateServer = () => {
+    const terminateServerMessage: ProcessMessage = {
+      type: ProcessMessageTypes.terminate,
+    };
+    sendMessage(JSON.stringify(terminateServerMessage));
+  };
+
   /* Worker communication */
   parentPort?.on("message", async (message) => {
     switch (message?.type) {
@@ -97,12 +104,12 @@ const logError = (...args: string[]) => {
         sendMessage(JSON.stringify(setOutputPath));
         break;
       case MessageType.Terminate:
-        const terminateProcess: ProcessMessage = {
-          type: ProcessMessageTypes.terminate,
-        };
-
-        sendMessage(JSON.stringify(terminateProcess));
+        terminateServer();
         break;
     }
   });
+
+  // If worker is terminated, terminate the server as well
+  process.on("SIGTERM", terminateServer);
+  process.on("SIGINT", terminateServer);
 })();
