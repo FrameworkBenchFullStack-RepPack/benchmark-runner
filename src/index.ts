@@ -1,6 +1,6 @@
-import path from "path";
+import path from "node:path";
+import { existsSync } from "node:fs";
 import { Command } from "commander";
-import { existsSync } from "fs";
 
 import type { TestSiteConfigs } from "./types/test-sites";
 import * as config from "../config";
@@ -327,9 +327,13 @@ const program = new Command();
 
       if (!shouldBeTested || !testSiteConfig.prepare) return;
 
+      const submodulePath = path.join(config.SUBMODULES_PATH, name);
+      const cwd =
+        testSiteConfig.modifyWorkingPath?.(submodulePath) ?? submodulePath;
+
       return createAsyncProcess({
         command: testSiteConfig.prepare,
-        cwd: path.join(config.SUBMODULES_PATH, name),
+        cwd,
         env: testSiteConfig.environmentVariables.prepare,
       });
     }),

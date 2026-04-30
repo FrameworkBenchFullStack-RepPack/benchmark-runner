@@ -14,22 +14,22 @@ const logError = (...args: string[]) => {
 };
 
 (async () => {
-  const data: MeasuringWorkerData = workerData;
+  const workerConfig: MeasuringWorkerData = workerData;
 
   const serverProcess = spawn(
-    data.processMeasurementExecutable,
+    workerConfig.processMeasurementExecutable,
     [
-      `--command=${data.serverCommand}`,
-      `--start-regex=${data.startDetectionRegex}`,
-      `--interval=${data.measurementInterval}`,
-      `--process-dir=${data.siteDir}`,
-      `--log-level=${data.logLevel}`,
+      `--command=${workerConfig.serverCommand}`,
+      `--start-regex=${workerConfig.startDetectionRegex}`,
+      `--interval=${workerConfig.measurementInterval}`,
+      `--process-dir=${workerConfig.cwd}`,
+      `--log-level=${workerConfig.logLevel}`,
     ],
     {
       shell: false,
       env: {
         ...process.env,
-        ...data.env,
+        ...workerConfig.env,
       },
     },
   );

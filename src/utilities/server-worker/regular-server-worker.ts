@@ -17,7 +17,7 @@ const logError = (...args: string[]) => {
   const workerConfig: BaseWorkerData = workerData;
 
   const serverProcess = spawn(workerConfig.serverCommand, {
-    cwd: workerConfig.siteDir,
+    cwd: workerConfig.cwd,
     shell: true,
     detached: true,
     env: {

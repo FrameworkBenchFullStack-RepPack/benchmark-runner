@@ -28,7 +28,7 @@ export type BaseWorkerData = {
   serverCommand: string;
   startDetectionRegex: string;
   serverPort: number;
-  siteDir: string;
+  cwd: string;
   env: Record<string, string>;
 };
 

@@ -7,6 +7,7 @@ export type TestSiteConfig = {
     prepare?: { [key: string]: string };
     start?: { [key: string]: string };
   };
+  modifyWorkingPath?: (projectPath: string) => string;
 };
 
 export type TestSiteConfigs = Record<string, TestSiteConfig>;

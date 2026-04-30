@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { TestSiteConfigs } from "./src/types/test-sites";
 import type { DatabaseConfigType } from "./src/types/database";
 
@@ -31,8 +32,8 @@ export const DatabaseConfig: DatabaseConfigType = {
  */
 export const TestSites: TestSiteConfigs = {
   "test-site-asp-net": {
-    prepare: "cd test-site && dotnet restore",
-    start: "cd test-site && dotnet run",
+    prepare: "dotnet restore",
+    start: "dotnet run",
     startDetectionRegex: "Application started.",
     environmentVariables: {
       portIdentifier: "PORT",
@@ -41,6 +42,8 @@ export const TestSites: TestSiteConfigs = {
         ConnectionStrings__DefaultConnection: `Host=${DATABASE_HOST};Port=${DATABASE_PORT};Database=${DATABASE_NAME};Username=${DATABASE_USER};Password=${DATABASE_PASSWORD}`,
       },
     },
+    modifyWorkingPath: (projectPath: string) =>
+      path.join(projectPath, "test-site"),
   },
   "test-site-ruby-rails-hotwire": {
     prepare: "bundle install --gemfile Gemfile && bin/rails assets:precompile",
