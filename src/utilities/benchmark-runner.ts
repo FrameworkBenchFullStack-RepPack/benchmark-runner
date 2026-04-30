@@ -68,12 +68,12 @@ function createServerController(
   // Prepare remaining worker data
   const submodulePath = path.join(config.SUBMODULES_PATH, testSiteName);
   const cwd =
-    testSiteConfig.modifyWorkingPath?.(submodulePath) ?? submodulePath;
+    testSiteConfig.start.modifyWorkingPath?.(submodulePath) ?? submodulePath;
 
   const workerData: BaseWorkerData | MeasuringWorkerData = {
     logLevel: options.logLevel,
     measurementInterval: options.profilerOptions.interval,
-    serverCommand: testSiteConfig.start,
+    serverCommand: testSiteConfig.start.command,
     startDetectionRegex: testSiteConfig.startDetectionRegex,
     serverPort: options.serverPort,
     env,

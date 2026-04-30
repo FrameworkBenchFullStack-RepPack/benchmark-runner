@@ -32,8 +32,16 @@ export const DatabaseConfig: DatabaseConfigType = {
  */
 export const TestSites: TestSiteConfigs = {
   "test-site-asp-net": {
-    prepare: "dotnet restore",
-    start: "dotnet run",
+    prepare: {
+      command: "dotnet restore",
+      modifyWorkingPath: (projectPath: string) =>
+        path.join(projectPath, "test-site"),
+    },
+    start: {
+      command: "dotnet run",
+      modifyWorkingPath: (projectPath: string) =>
+        path.join(projectPath, "test-site"),
+    },
     startDetectionRegex: "Application started.",
     environmentVariables: {
       portIdentifier: "PORT",
@@ -42,12 +50,21 @@ export const TestSites: TestSiteConfigs = {
         ConnectionStrings__DefaultConnection: `Host=${DATABASE_HOST};Port=${DATABASE_PORT};Database=${DATABASE_NAME};Username=${DATABASE_USER};Password=${DATABASE_PASSWORD}`,
       },
     },
-    modifyWorkingPath: (projectPath: string) =>
-      path.join(projectPath, "test-site"),
   },
   "test-site-ruby-rails-hotwire": {
-    prepare: "bundle install --gemfile Gemfile && bin/rails assets:precompile",
-    start: "bin/thrust bin/rails server",
+    prepare: [
+      {
+        command: "bundle install --gemfile Gemfile",
+      },
+      {
+        command: "rails assets:precompile",
+        modifyWorkingPath: (p) => path.join(p, "bin"),
+      },
+    ],
+    start: {
+      command: "thrust rails server",
+      modifyWorkingPath: (p) => path.join(p, "bin"),
+    },
     startDetectionRegex: "Server started",
     environmentVariables: {
       portIdentifier: "HTTP_PORT",
@@ -63,8 +80,8 @@ export const TestSites: TestSiteConfigs = {
     },
   },
   "test-site-astro-htmx": {
-    prepare: "npm install-clean && npm run build",
-    start: "npm run serve",
+    prepare: [{ command: "npm install-clean" }, { command: "npm run build" }],
+    start: { command: "npm run serve" },
     startDetectionRegex: "Server listening on",
     environmentVariables: {
       portIdentifier: "PORT",
@@ -74,9 +91,12 @@ export const TestSites: TestSiteConfigs = {
     },
   },
   "test-site-nextjs": {
-    prepare:
-      "npm install-clean && npm run build && cp -r .next/static .next/standalone/.next/",
-    start: "node .next/standalone/server.js",
+    prepare: [
+      { command: "npm install-clean" },
+      { command: "npm run build" },
+      { command: "cp -r .next/static .next/standalone/.next/" },
+    ],
+    start: { command: "node .next/standalone/server.js" },
     startDetectionRegex: "✓ Ready in ",
     environmentVariables: {
       portIdentifier: "PORT",

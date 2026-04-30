@@ -328,14 +328,19 @@ const program = new Command();
       if (!shouldBeTested || !testSiteConfig.prepare) return;
 
       const submodulePath = path.join(config.SUBMODULES_PATH, name);
-      const cwd =
-        testSiteConfig.modifyWorkingPath?.(submodulePath) ?? submodulePath;
+      const prepareCommands = Array.isArray(testSiteConfig.prepare)
+        ? testSiteConfig.prepare
+        : [testSiteConfig.prepare];
 
-      return createAsyncProcess({
-        command: testSiteConfig.prepare,
-        cwd,
-        env: testSiteConfig.environmentVariables.prepare,
-      });
+      for (const prepareCommand of prepareCommands) {
+        const cwd =
+          prepareCommand.modifyWorkingPath?.(submodulePath) ?? submodulePath;
+        await createAsyncProcess({
+          command: prepareCommand.command,
+          cwd,
+          env: testSiteConfig.environmentVariables.prepare,
+        });
+      }
     }),
   );
 

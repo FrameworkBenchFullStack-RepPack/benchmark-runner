@@ -1,13 +1,17 @@
+export type Command = {
+  command: string;
+  modifyWorkingPath?: (projectPath: string) => string;
+};
+
 export type TestSiteConfig = {
-  prepare?: string;
-  start: string;
+  prepare?: Command | Command[];
+  start: Command;
   startDetectionRegex: string;
   environmentVariables: {
     portIdentifier: string;
     prepare?: { [key: string]: string };
     start?: { [key: string]: string };
   };
-  modifyWorkingPath?: (projectPath: string) => string;
 };
 
 export type TestSiteConfigs = Record<string, TestSiteConfig>;
