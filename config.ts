@@ -137,7 +137,7 @@ export const TestSites: TestSiteConfigs = {
   },
   "test-site-django-htmx": {
     prepare: {
-      command: "pip install -r requirements.txt",
+      command: "pip3 install -r requirements.txt",
       modifyWorkingPath: (p) => path.join(p, "django"),
     },
     start: {
