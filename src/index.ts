@@ -33,7 +33,7 @@ export type InputOptions = {
   driverOptions: BuilderOptions;
   repetitions: number;
   chosenBenchmarks: string[] | undefined;
-  chosenFrameworks: TestSiteConfigs | undefined;
+  chosenFrameworks: TestSiteConfigs;
   benchmarksPath: string;
   processEnergyMeasurementPath: string | undefined;
 };
@@ -50,7 +50,7 @@ const inputOptions: InputOptions = {
   driverOptions: defaultBuilderOptions,
   repetitions: 0,
   chosenBenchmarks: undefined,
-  chosenFrameworks: undefined,
+  chosenFrameworks: {},
   benchmarksPath: BENCHMARKS_PATH,
   processEnergyMeasurementPath: undefined,
 };
@@ -106,7 +106,7 @@ const program = new Command();
     )
     .option(
       "--test-sites <test-sites...>",
-      `specify the test-sites. Available test-sites: ${Object.keys(config.TestSites).join(", ")}`,
+      `specify the test-sites. Available test-sites: ${Object.keys(config.TEST_SITE_CONFIG).join(", ")}`,
     )
     .option(
       "--process-energy-measurement <path>",
@@ -264,7 +264,7 @@ const program = new Command();
       throw new Error(`"${testSites}" is not an array`);
     }
 
-    const validFrameworks = Object.keys(config.TestSites);
+    const validFrameworks = Object.keys(config.TEST_SITE_CONFIG);
 
     const testSiteConfigs: TestSiteConfigs = {};
 
@@ -273,10 +273,12 @@ const program = new Command();
         throw new Error(`"${testSites} contain an invalid framework"`);
 
       // Using ! as we are sure that it is defined
-      testSiteConfigs[testSite] = config.TestSites[testSite]!;
+      testSiteConfigs[testSite] = config.TEST_SITE_CONFIG[testSite]!;
     }
 
     inputOptions.chosenFrameworks = testSiteConfigs;
+  } else {
+    inputOptions.chosenFrameworks = config.TEST_SITE_CONFIG;
   }
 
   /** Handle process energy measurement flag */
@@ -300,17 +302,17 @@ const program = new Command();
   console.log("Successfully parsed input parameters");
 
   // Run db prepare and start script
-  if (config.DatabaseConfig) {
+  if (config.DATABASE_CONFIG) {
     const dbSteps: [string, ConfigStep][] = [
-      ["Preparing database", config.DatabaseConfig.prepare],
-      ["Starting database", config.DatabaseConfig.start],
+      ["Preparing database", config.DATABASE_CONFIG.prepare],
+      ["Starting database", config.DATABASE_CONFIG.start],
     ];
 
     for (const [step, configStep] of dbSteps) {
       console.log(step);
       await createAsyncProcess({
         command: configStep.command,
-        cwd: `${config.SUBMODULES_PATH}/${config.DatabaseConfig.submoduleName}`,
+        cwd: `${config.SUBMODULES_PATH}/${config.DATABASE_CONFIG.submoduleName}`,
         regex: configStep.regex,
         stream: Stream.stderr,
       });
@@ -320,28 +322,28 @@ const program = new Command();
   // Run test-site prepare script
   console.log("Preparing test-sites");
   await Promise.all(
-    Object.entries(config.TestSites).map(async ([name, testSiteConfig]) => {
-      const shouldBeTested =
-        inputOptions.chosenFrameworks === undefined ||
-        name in inputOptions.chosenFrameworks;
+    Object.entries(config.TEST_SITE_CONFIG).map(
+      async ([name, testSiteConfig]) => {
+        const shouldBeTested =
+          inputOptions.chosenFrameworks === undefined ||
+          name in inputOptions.chosenFrameworks;
 
-      if (!shouldBeTested || !testSiteConfig.prepare) return;
+        if (!shouldBeTested || !testSiteConfig.prepare) return;
 
-      const submodulePath = path.join(config.SUBMODULES_PATH, name);
-      const prepareCommands = Array.isArray(testSiteConfig.prepare)
-        ? testSiteConfig.prepare
-        : [testSiteConfig.prepare];
+        const submodulePath = path.join(config.SUBMODULES_PATH, name);
+        const prepareCommands = Array.isArray(testSiteConfig.prepare)
+          ? testSiteConfig.prepare
+          : [testSiteConfig.prepare];
 
-      for (const prepareCommand of prepareCommands) {
-        const cwd =
-          prepareCommand.modifyWorkingPath?.(submodulePath) ?? submodulePath;
-        await createAsyncProcess({
-          command: prepareCommand.command,
-          cwd,
-          env: testSiteConfig.environmentVariables.prepare,
-        });
-      }
-    }),
+        for (const prepareCommand of prepareCommands) {
+          await createAsyncProcess({
+            command: prepareCommand.command,
+            cwd: prepareCommand.workingPath(submodulePath),
+            env: prepareCommand.env(submodulePath),
+          });
+        }
+      },
+    ),
   );
 
   console.log("Starting benchmark");
