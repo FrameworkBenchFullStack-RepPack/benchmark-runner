@@ -43,7 +43,7 @@ const logError = (...args: string[]) => {
   };
 
   serverProcess.stderr.on("data", (data) => {
-    logError("stderr:", data.toString());
+    logError(data.toString());
   });
 
   /* Server process stdout handling */
