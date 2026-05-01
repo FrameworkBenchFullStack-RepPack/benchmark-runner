@@ -44,12 +44,11 @@ async function loadAndMapFiles<T>(
  */
 export async function loadBenchmarks(
   dir: string,
-  benchmarks?: string[],
+  benchmarks: string[],
 ): Promise<[string, Function][]> {
   // Create filter function if necessary
-  const filterFunction = benchmarks
-    ? (bmName: string) => benchmarks.includes(removeBenchmarkExtension(bmName))
-    : undefined;
+  const filterFunction = (bmName: string) =>
+    benchmarks.includes(removeBenchmarkExtension(bmName));
 
   // Import filtered benchmarks and make sure they export a default function
   const importedBenchmarks = await loadAndMapFiles(
@@ -61,9 +60,14 @@ export async function loadBenchmarks(
     filterFunction,
   );
 
-  // Return the functions
-  return importedBenchmarks.filter(
+  // Get the functions
+  const functions = importedBenchmarks.filter(
     (bm): bm is [string, Function] => typeof bm[1] === "function",
+  );
+
+  // Return functions in sorted order
+  return functions.sort(
+    (a, b) => benchmarks.indexOf(a[0]) - benchmarks.indexOf(b[0]),
   );
 }
 

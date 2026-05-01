@@ -32,7 +32,7 @@ export type InputOptions = {
   profilerOptions: ProfilerOptions;
   driverOptions: BuilderOptions;
   repetitions: number;
-  chosenBenchmarks: string[] | undefined;
+  chosenBenchmarks: string[];
   chosenFrameworks: TestSiteConfigs;
   benchmarksPath: string;
   processEnergyMeasurementPath: string | undefined;
@@ -49,7 +49,7 @@ const inputOptions: InputOptions = {
   },
   driverOptions: defaultBuilderOptions,
   repetitions: 0,
-  chosenBenchmarks: undefined,
+  chosenBenchmarks: [],
   chosenFrameworks: {},
   benchmarksPath: BENCHMARKS_PATH,
   processEnergyMeasurementPath: undefined,
@@ -103,6 +103,15 @@ const program = new Command();
     .option(
       "--benchmarks <benchmarks...>",
       `specify the benchmarks. Available benchmarks: ${(await getBenchmarkNames(BENCHMARKS_PATH)).join(", ")}`,
+      [
+        "startup",
+        "static",
+        "live",
+        "list",
+        "list-interact",
+        "home-interact",
+        "navigate",
+      ],
     )
     .option(
       "--test-sites <test-sites...>",
