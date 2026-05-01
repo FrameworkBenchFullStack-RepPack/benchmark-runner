@@ -8,7 +8,7 @@ import {
 import BenchmarkInput from "./benchmark-types";
 import { testList } from "./elements/list";
 
-const BENCHMARK_NAME = "subpage-home" as const;
+const BENCHMARK_NAME = "home-interact" as const;
 
 export default async function benchmark(options: BenchmarkInput) {
   const prepareTest = async (driver: Driver) => {

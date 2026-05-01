@@ -7,7 +7,7 @@ import {
 } from "../utilities/benchmark-utilities";
 import BenchmarkInput from "./benchmark-types";
 
-const BENCHMARK_NAME = "subpage-live" as const;
+const BENCHMARK_NAME = "live" as const;
 
 export default async function benchmark(options: BenchmarkInput) {
   const prepareTest = async (driver: Driver) => {

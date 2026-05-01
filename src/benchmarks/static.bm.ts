@@ -7,7 +7,7 @@ import {
 } from "../utilities/benchmark-utilities";
 import BenchmarkInput from "./benchmark-types";
 
-const BENCHMARK_NAME = "navigate-static" as const;
+const BENCHMARK_NAME = "static" as const;
 
 export default async function benchmark(options: BenchmarkInput) {
   const prepareTest = async (driver: Driver) => {

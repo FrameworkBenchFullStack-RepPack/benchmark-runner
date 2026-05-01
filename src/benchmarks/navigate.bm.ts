@@ -10,7 +10,7 @@ import {
 } from "../utilities/benchmark-utilities";
 import BenchmarkInput from "./benchmark-types";
 
-const BENCHMARK_NAME = "navigate-all-pages" as const;
+const BENCHMARK_NAME = "navigate" as const;
 
 async function scrollAndNavigate(driver: Driver, hrefSelector: string) {
   // Scroll to footer and open second static page
