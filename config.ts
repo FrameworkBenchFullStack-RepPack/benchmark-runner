@@ -1,5 +1,8 @@
 import path from "node:path";
-import { Command, type TestSiteConfigs } from "./src/types/test-sites";
+import {
+  type CommandConfig,
+  type TestSiteConfigs,
+} from "./src/types/test-sites";
 import type { DatabaseConfigType } from "./src/types/database";
 
 export const SUBMODULES_PATH = `${process.cwd()}/submodules` as const;
@@ -30,14 +33,14 @@ export const DATABASE_CONFIG: DatabaseConfigType = {
 /**
  * The key to every configuration must match the submodule name
  */
-export const TEST_SITE_CONFIG: TestSiteConfigs = {
+export const TEST_SITE_CONFIG: TestSiteConfigs<CommandConfig> = {
   "test-site-asp-net": {
-    prepare: new Command({
+    prepare: {
       command: "dotnet restore",
       modifyWorkingPath: (projectPath: string) =>
         path.join(projectPath, "test-site"),
-    }),
-    start: new Command({
+    },
+    start: {
       command: "dotnet run",
       environment: {
         ASPNETCORE_ENVIRONMENT: "Production",
@@ -45,21 +48,21 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       },
       modifyWorkingPath: (projectPath: string) =>
         path.join(projectPath, "test-site"),
-    }),
+    },
     startDetectionRegex: { regex: "Application started.", channel: "stdout" },
     portIdentifier: "PORT",
   },
   "test-site-ruby-rails-hotwire": {
     prepare: [
-      new Command({
+      {
         command: "bundle install --gemfile Gemfile",
         environment: {
           RAILS_ENV: "production",
           DATABASE_URL: DATABASE_CONFIG.connectionString,
           SECRET_KEY_BASE_DUMMY: "1",
         },
-      }),
-      new Command({
+      },
+      {
         command: "rails assets:precompile",
         environment: {
           RAILS_ENV: "production",
@@ -67,9 +70,9 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
           SECRET_KEY_BASE_DUMMY: "1",
         },
         modifyWorkingPath: (p) => path.join(p, "bin"),
-      }),
+      },
     ],
-    start: new Command({
+    start: {
       command: "thrust rails server",
       environment: {
         RAILS_ENV: "production",
@@ -77,21 +80,21 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
         SECRET_KEY_BASE_DUMMY: "1",
       },
       modifyWorkingPath: (p) => path.join(p, "bin"),
-    }),
+    },
     startDetectionRegex: { regex: "Server started", channel: "stdout" },
     portIdentifier: "HTTP_PORT",
   },
   "test-site-ruby-rails-htmx": {
     prepare: [
-      new Command({
+      {
         command: "bundle install --gemfile Gemfile",
         environment: {
           RAILS_ENV: "production",
           DATABASE_URL: DATABASE_CONFIG.connectionString,
           SECRET_KEY_BASE_DUMMY: "1",
         },
-      }),
-      new Command({
+      },
+      {
         command: "rails assets:precompile",
         environment: {
           RAILS_ENV: "production",
@@ -99,9 +102,9 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
           SECRET_KEY_BASE_DUMMY: "1",
         },
         modifyWorkingPath: (p) => path.join(p, "bin"),
-      }),
+      },
     ],
-    start: new Command({
+    start: {
       command: "thrust rails server",
       environment: {
         RAILS_ENV: "production",
@@ -109,46 +112,43 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
         SECRET_KEY_BASE_DUMMY: "1",
       },
       modifyWorkingPath: (p) => path.join(p, "bin"),
-    }),
+    },
     startDetectionRegex: { regex: "Server started", channel: "stdout" },
     portIdentifier: "HTTP_PORT",
   },
   "test-site-astro-htmx": {
-    prepare: [
-      new Command({ command: "npm install-clean" }),
-      new Command({ command: "npm run build" }),
-    ],
-    start: new Command({
+    prepare: [{ command: "npm install-clean" }, { command: "npm run build" }],
+    start: {
       command: "npm run serve",
       environment: {
         DATABASE_URL: DATABASE_CONFIG.connectionString,
       },
-    }),
+    },
     startDetectionRegex: { regex: "Server listening on", channel: "stdout" },
     portIdentifier: "PORT",
   },
   "test-site-nextjs": {
     prepare: [
-      new Command({ command: "npm install-clean" }),
-      new Command({ command: "npm run build" }),
-      new Command({ command: "cp -r .next/static .next/standalone/.next/" }),
+      { command: "npm install-clean" },
+      { command: "npm run build" },
+      { command: "cp -r .next/static .next/standalone/.next/" },
     ],
-    start: new Command({
+    start: {
       command: "node .next/standalone/server.js",
       environment: {
         DATABASE_URL: DATABASE_CONFIG.connectionString,
       },
-    }),
+    },
     startDetectionRegex: { regex: "✓ Ready in ", channel: "stdout" },
     portIdentifier: "PORT",
   },
   "test-site-django-htmx": {
     portIdentifier: "PORT",
     prepare: [
-      new Command({
+      {
         command: "python3 -m venv django-venv",
-      }),
-      new Command({
+      },
+      {
         command: `"${SUBMODULES_PATH}/test-site-django-htmx/django-venv/bin/python" -m pip install -r requirements.txt`,
         environment: {
           VIRTUAL_ENV: (p) => path.join(p, "django-venv"),
@@ -156,8 +156,8 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
             `${path.join(p, "django-venv", "bin")}:${process.env.PATH}`,
         },
         modifyWorkingPath: (p) => path.join(p, "django"),
-      }),
-      new Command({
+      },
+      {
         command: `"${SUBMODULES_PATH}/test-site-django-htmx/django-venv/bin/python" manage.py collectstatic`,
         environment: {
           DATABASE_URL: DATABASE_CONFIG.connectionString,
@@ -166,9 +166,9 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
             `${path.join(p, "django-venv", "bin")}:${process.env.PATH}`,
         },
         modifyWorkingPath: (p) => path.join(p, "django"),
-      }),
+      },
     ],
-    start: new Command({
+    start: {
       command: 'daphne test_site.asgi:application --port "${PORT}"',
       environment: {
         DATABASE_URL: DATABASE_CONFIG.connectionString,
@@ -177,7 +177,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
           `${path.join(p, "django-venv", "bin")}:${process.env.PATH}`,
       },
       modifyWorkingPath: (p) => path.join(p, "django"),
-    }),
+    },
     startDetectionRegex: {
       regex: "Listening on TCP address",
       channel: "stderr",
@@ -185,15 +185,15 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
   },
   "test-site-spring-boot-htmx": {
     portIdentifier: "PORT",
-    prepare: [new Command({ command: "./gradlew build" })],
-    start: new Command({
+    prepare: { command: "./gradlew build" },
+    start: {
       command: `java -jar ${path.join(SUBMODULES_PATH, "test-site-spring-boot-htmx/build/libs/test-site-spring-boot-htmx-*.jar")}`,
       environment: {
         SPRING_DATASOURCE_URL: `jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}`,
         SPRING_DATASOURCE_USERNAME: DATABASE_USER,
         SPRING_DATASOURCE_PASSWORD: DATABASE_PASSWORD,
       },
-    }),
+    },
     startDetectionRegex: {
       regex: "Started TestSiteSpringBootHtmxApplication in ",
       channel: "stdout",

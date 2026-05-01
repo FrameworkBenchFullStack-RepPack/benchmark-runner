@@ -2,7 +2,10 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { Command } from "commander";
 
-import type { TestSiteConfigs } from "./types/test-sites";
+import {
+  Command as BenchmarkCommand,
+  type TestSiteConfigs,
+} from "./types/test-sites";
 import * as config from "../config";
 
 import {
@@ -25,6 +28,20 @@ import { ConfigStep } from "./types/database";
 import { LogLevel } from "./utilities/server-worker/worker-types";
 
 const BENCHMARKS_PATH = path.resolve(import.meta.dirname, "./benchmarks/");
+
+// Transform TestSiteConfig to use Command instances
+const TRANSFORMED_TEST_SITE_CONFIG: TestSiteConfigs = {};
+for (const [name, siteConfig] of Object.entries(config.TEST_SITE_CONFIG)) {
+  TRANSFORMED_TEST_SITE_CONFIG[name] = {
+    ...siteConfig,
+    prepare: siteConfig.prepare
+      ? Array.isArray(siteConfig.prepare)
+        ? siteConfig.prepare.map((prepare) => new BenchmarkCommand(prepare))
+        : new BenchmarkCommand(siteConfig.prepare)
+      : undefined,
+    start: new BenchmarkCommand(siteConfig.start),
+  };
+}
 
 export type InputOptions = {
   logLevel: LogLevel;
@@ -273,7 +290,7 @@ const program = new Command();
       throw new Error(`"${testSites}" is not an array`);
     }
 
-    const validFrameworks = Object.keys(config.TEST_SITE_CONFIG);
+    const validFrameworks = Object.keys(TRANSFORMED_TEST_SITE_CONFIG);
 
     const testSiteConfigs: TestSiteConfigs = {};
 
@@ -282,12 +299,12 @@ const program = new Command();
         throw new Error(`"${testSites} contain an invalid framework"`);
 
       // Using ! as we are sure that it is defined
-      testSiteConfigs[testSite] = config.TEST_SITE_CONFIG[testSite]!;
+      testSiteConfigs[testSite] = TRANSFORMED_TEST_SITE_CONFIG[testSite]!;
     }
 
     inputOptions.chosenFrameworks = testSiteConfigs;
   } else {
-    inputOptions.chosenFrameworks = config.TEST_SITE_CONFIG;
+    inputOptions.chosenFrameworks = TRANSFORMED_TEST_SITE_CONFIG;
   }
 
   /** Handle process energy measurement flag */
@@ -331,7 +348,7 @@ const program = new Command();
   // Run test-site prepare script
   console.log("Preparing test-sites");
   await Promise.all(
-    Object.entries(config.TEST_SITE_CONFIG).map(
+    Object.entries(TRANSFORMED_TEST_SITE_CONFIG).map(
       async ([name, testSiteConfig]) => {
         const shouldBeTested =
           inputOptions.chosenFrameworks === undefined ||

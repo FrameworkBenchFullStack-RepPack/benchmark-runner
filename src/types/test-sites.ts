@@ -1,6 +1,6 @@
 export type PathBasedString = (projectPath: string) => string;
 
-type CommandConfig = {
+export type CommandConfig = {
   command: string;
   environment?: Record<string, string | PathBasedString>;
   modifyWorkingPath?: PathBasedString;
@@ -39,11 +39,14 @@ export type StartDetectionRegex = {
   channel: OutputChannel;
 };
 
-export type TestSiteConfig = {
+export type TestSiteConfig<CommandType = Command> = {
   portIdentifier: string;
-  start: Command;
+  start: CommandType;
   startDetectionRegex: StartDetectionRegex;
-  prepare?: Command | Command[];
+  prepare?: CommandType | CommandType[];
 };
 
-export type TestSiteConfigs = Record<string, TestSiteConfig>;
+export type TestSiteConfigs<CommandType = Command> = Record<
+  string,
+  TestSiteConfig<CommandType>
+>;
