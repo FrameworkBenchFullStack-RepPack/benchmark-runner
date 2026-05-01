@@ -187,7 +187,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
     portIdentifier: "PORT",
     prepare: [new Command({ command: "./gradlew build" })],
     start: new Command({
-      command: "java -jar build/libs/test-site-spring-boot-htmx-*.jar",
+      command: `java -jar ${path.join(SUBMODULES_PATH, "test-site-spring-boot-htmx/build/libs/test-site-spring-boot-htmx-*.jar")}`,
       environment: {
         SPRING_DATASOURCE_URL: `jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}`,
         SPRING_DATASOURCE_USERNAME: DATABASE_USER,
@@ -195,8 +195,8 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       },
     }),
     startDetectionRegex: {
-      regex: "Completed initialization in ",
-      channel: "stdout",
+      regex: "Started TestSiteSpringBootHtmxApplication in ",
+      channel: "stderr",
     },
   },
 } as const;
