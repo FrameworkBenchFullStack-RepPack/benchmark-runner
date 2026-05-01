@@ -169,7 +169,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       }),
     ],
     start: new Command({
-      command: "daphne test_site.asgi:application",
+      command: 'daphne test_site.asgi:application --port "${PORT}"',
       environment: {
         DATABASE_URL: DATABASE_CONFIG.connectionString,
         VIRTUAL_ENV: (p) => path.join(p, "django-venv"),
@@ -181,6 +181,22 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
     startDetectionRegex: {
       regex: "Listening on TCP address",
       channel: "stderr",
+    },
+  },
+  "test-site-spring-boot-htmx": {
+    portIdentifier: "PORT",
+    prepare: [new Command({ command: "./gradlew build" })],
+    start: new Command({
+      command: "java -jar build/libs/test-site-spring-boot-htmx-*.jar",
+      environment: {
+        SPRING_DATASOURCE_URL: `jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}`,
+        SPRING_DATASOURCE_USERNAME: DATABASE_USER,
+        SPRING_DATASOURCE_PASSWORD: DATABASE_PASSWORD,
+      },
+    }),
+    startDetectionRegex: {
+      regex: "Completed initialization in ",
+      channel: "stdout",
     },
   },
 } as const;
