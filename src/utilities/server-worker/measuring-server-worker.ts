@@ -20,7 +20,8 @@ const logError = (...args: string[]) => {
     workerConfig.processMeasurementExecutable,
     [
       `--command=${workerConfig.serverCommand}`,
-      `--start-regex=${workerConfig.startDetectionRegex}`,
+      `--start-regex=${workerConfig.startDetectionRegex.regex}`,
+      `--regex-output-channel=${workerConfig.startDetectionRegex.channel}`,
       `--interval=${workerConfig.measurementInterval}`,
       `--process-dir=${workerConfig.cwd}`,
       `--log-level=${workerConfig.logLevel}`,

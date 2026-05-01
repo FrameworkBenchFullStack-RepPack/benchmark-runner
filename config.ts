@@ -1,9 +1,5 @@
 import path from "node:path";
-import {
-  Command,
-  TestSiteConfig,
-  type TestSiteConfigs,
-} from "./src/types/test-sites";
+import { Command, type TestSiteConfigs } from "./src/types/test-sites";
 import type { DatabaseConfigType } from "./src/types/database";
 
 export const SUBMODULES_PATH = `${process.cwd()}/submodules` as const;
@@ -50,7 +46,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       modifyWorkingPath: (projectPath: string) =>
         path.join(projectPath, "test-site"),
     }),
-    startDetectionRegex: "Application started.",
+    startDetectionRegex: { regex: "Application started.", channel: "stdout" },
     portIdentifier: "PORT",
   },
   "test-site-ruby-rails-hotwire": {
@@ -82,7 +78,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       },
       modifyWorkingPath: (p) => path.join(p, "bin"),
     }),
-    startDetectionRegex: "Server started",
+    startDetectionRegex: { regex: "Server started", channel: "stdout" },
     portIdentifier: "HTTP_PORT",
   },
   "test-site-ruby-rails-htmx": {
@@ -114,7 +110,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       },
       modifyWorkingPath: (p) => path.join(p, "bin"),
     }),
-    startDetectionRegex: "Server started",
+    startDetectionRegex: { regex: "Server started", channel: "stdout" },
     portIdentifier: "HTTP_PORT",
   },
   "test-site-astro-htmx": {
@@ -128,7 +124,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
         DATABASE_URL: DATABASE_CONFIG.connectionString,
       },
     }),
-    startDetectionRegex: "Server listening on",
+    startDetectionRegex: { regex: "Server listening on", channel: "stdout" },
     portIdentifier: "PORT",
   },
   "test-site-nextjs": {
@@ -143,10 +139,11 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
         DATABASE_URL: DATABASE_CONFIG.connectionString,
       },
     }),
-    startDetectionRegex: "✓ Ready in ",
+    startDetectionRegex: { regex: "✓ Ready in ", channel: "stdout" },
     portIdentifier: "PORT",
   },
   "test-site-django-htmx": {
+    portIdentifier: "PORT",
     prepare: [
       new Command({
         command: "python3 -m venv django-venv",
@@ -181,7 +178,9 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
       },
       modifyWorkingPath: (p) => path.join(p, "django"),
     }),
-    startDetectionRegex: "Listening on TCP address",
-    portIdentifier: "PORT",
+    startDetectionRegex: {
+      regex: "Listening on TCP address",
+      channel: "stderr",
+    },
   },
 } as const;

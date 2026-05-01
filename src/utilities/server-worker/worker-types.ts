@@ -1,3 +1,5 @@
+import { type StartDetectionRegex } from "../../types/test-sites.ts";
+
 export type LogLevel = "debug" | "info" | "warning" | "error" | "off";
 
 export const MessageType = {
@@ -26,7 +28,7 @@ export type BaseWorkerData = {
   logLevel: LogLevel;
   measurementInterval: number;
   serverCommand: string;
-  startDetectionRegex: string;
+  startDetectionRegex: StartDetectionRegex;
   serverPort: number;
   cwd: string;
   env: Record<string, string>;

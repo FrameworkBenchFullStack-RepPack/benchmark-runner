@@ -3,11 +3,9 @@ import {
   MessageType,
   type BaseWorkerData,
   type MessageStructures,
-  checkIncomingJson,
-  ProcessMessageTypes,
-  type ProcessMessage,
 } from "./worker-types.ts";
 import { spawn } from "child_process";
+import { type OutputChannel } from "../../types/test-sites.ts";
 
 const logError = (...args: string[]) => {
   console.error("Server worker error - ,", ...args);
@@ -33,22 +31,25 @@ const logError = (...args: string[]) => {
     },
   };
 
-  serverProcess.stderr.on("data", (data) => {
-    logError("stderr:", data.toString());
-  });
+  const handleText = (channel: OutputChannel, input: any) => {
+    const text = input.toString();
+    if (workerConfig.logLevel == "debug") logError(`${channel}:`, text);
 
-  /* Server process stdout handling */
-  serverProcess.stdout.on("data", (data) => {
-    try {
-      // Parse text and create regex
-      const text = data.toString();
-      const regexp = new RegExp(workerConfig.startDetectionRegex);
+    if (workerConfig.startDetectionRegex.channel === channel) {
+      try {
+        // Create regex
+        const regexp = new RegExp(workerConfig.startDetectionRegex.regex);
 
-      if (regexp.test(text)) parentPort?.postMessage(readyMessage);
-    } catch (e) {
-      console.error("Process worker threw with: ", e);
+        if (regexp.test(text)) parentPort?.postMessage(readyMessage);
+      } catch (e) {
+        console.error("Process worker threw with: ", e);
+      }
     }
-  });
+  };
+
+  /* Server process output handling */
+  serverProcess.stderr.on("data", (data) => handleText("stderr", data));
+  serverProcess.stdout.on("data", (data) => handleText("stdout", data));
 
   /* Server process close handling */
   serverProcess.on("exit", () => {

@@ -1,18 +1,5 @@
 export type PathBasedString = (projectPath: string) => string;
 
-// export type Command = {
-//   command: string;
-//   environment?: { [key: string]: string | PathBasedString };
-//   modifyWorkingPath?: PathBasedString;
-// };
-
-// export type TestSiteConfig = {
-//   prepare?: Command | Command[];
-//   start: Command;
-//   startDetectionRegex: string;
-//   portIdentifier: string;
-// };
-
 type CommandConfig = {
   command: string;
   environment?: Record<string, string | PathBasedString>;
@@ -46,10 +33,16 @@ export class Command {
   }
 }
 
+export type OutputChannel = "stdout" | "stderr";
+export type StartDetectionRegex = {
+  regex: string;
+  channel: OutputChannel;
+};
+
 export type TestSiteConfig = {
   portIdentifier: string;
   start: Command;
-  startDetectionRegex: string;
+  startDetectionRegex: StartDetectionRegex;
   prepare?: Command | Command[];
 };
 
