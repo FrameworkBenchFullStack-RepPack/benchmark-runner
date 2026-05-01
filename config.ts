@@ -196,7 +196,7 @@ export const TEST_SITE_CONFIG: TestSiteConfigs = {
     }),
     startDetectionRegex: {
       regex: "Started TestSiteSpringBootHtmxApplication in ",
-      channel: "stderr",
+      channel: "stdout",
     },
   },
 } as const;
