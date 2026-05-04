@@ -158,6 +158,10 @@ export const TEST_SITE_CONFIG: TestSiteConfigs<CommandConfig> = {
         modifyWorkingPath: (p) => path.join(p, "django"),
       },
       {
+        command: `rm -rf staticfiles`,
+        modifyWorkingPath: (p) => path.join(p, "django"),
+      },
+      {
         command: `"${SUBMODULES_PATH}/test-site-django-htmx/django-venv/bin/python" manage.py collectstatic`,
         environment: {
           DATABASE_URL: DATABASE_CONFIG.connectionString,
