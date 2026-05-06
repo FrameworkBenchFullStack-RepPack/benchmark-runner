@@ -81,7 +81,11 @@ const program = new Command();
       "A CLI for running performance focused benchmarks in the Firefox browser, using selenium",
     )
     .version("1.0.0")
-    .option("-p, --port", "specify port used for serving the websites", "1337")
+    .option(
+      "-p, --port <port>",
+      "specify port used for serving the websites",
+      "1337",
+    )
     .option(
       "-l, --log-level <log-level>",
       "specify which logs to print to terminal (debug, info, warning, error, off)",
