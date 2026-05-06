@@ -79,7 +79,7 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
     throw new Error("Failed to initialize Driver");
   }
 
-  const geckoOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}.json`;
+  const geckoOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}_client.json`;
   const serverOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}_server.csv`;
 
   try {
