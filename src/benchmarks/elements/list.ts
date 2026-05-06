@@ -145,7 +145,7 @@ export async function testList(driver: Driver) {
   /** Category Input Fields */
   const categoryInputElementRef = (i: number) =>
     driver.findElement(
-      By.css(`#list label:has(input[name="category"]):nth-of-type(${i}) input`),
+      By.css(`#list fieldset :has(input[name="category"]):nth-of-type(${i}) input`),
     );
 
   let categories = 4;
