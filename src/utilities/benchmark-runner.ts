@@ -42,50 +42,60 @@ export default async function startBenchmark(options: InputOptions) {
   /** Determine test-sites to be benchmarked */
   const testSites = options.chosenFrameworks;
 
-  /** Loop through every repetitions */
-  for (let repetition = 1; repetition <= options.repetitions; repetition++) {
+  /** Load benchmarks */
+  const benchmarks = await loadBenchmarks(
+    options.benchmarksPath,
+    options.chosenBenchmarks,
+  );
+
+  /** Loop through every iterations */
+  for (let iteration = 1; iteration <= options.iterations; iteration++) {
     /** Loop through every test-site and perform the benchmark */
     for (const [testSiteName, testSiteConfig] of Object.entries(testSites)) {
-      const server = createServerController(
-        options,
-        testSiteName,
-        testSiteConfig,
-      );
-
-      await server.waitUntilReady();
-
-      const benchmarkInput: BenchmarkInput = {
-        framework: testSiteName,
-        repetition,
-        resultsPath: RESULTS_PATH,
-        link: `http://localhost:${options.serverPort}`,
-        profilerOptions: options.profilerOptions,
-        driverOptions: options.driverOptions,
-        setServerResultPath: server.setResultPath,
-        startServerMeasurement: server.startMeasurement,
-        stopServerMeasurement: server.stopMeasurement,
-      };
-
-      try {
-        // Perform select benchmark
-        const benchmarks = await loadBenchmarks(
-          options.benchmarksPath,
-          options.chosenBenchmarks,
+      /** Loop through each of the chosen benchmark */
+      for (const [
+        benchmarkIndex,
+        [benchmarkName, benchmark],
+      ] of benchmarks.entries()) {
+        /** Prepare and wait for server */
+        const server = createServerController(
+          options,
+          testSiteName,
+          testSiteConfig,
         );
-        for (const [
-          benchmarkIndex,
-          [benchmarkName, benchmark],
-        ] of benchmarks.entries()) {
-          console.log(
-            `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (repetition ${repetition}/${options.repetitions})`,
-          );
-          await benchmark(benchmarkInput);
-        }
 
-        console.log("Finished testing and quit browser instance");
-      } finally {
-        // Terminate server
-        await server.terminate();
+        await server.waitUntilReady();
+
+        /** Perform select warmup rounds per benchmark */
+        try {
+          for (
+            let warmupRound = 1;
+            warmupRound <= options.warmupRounds + 1;
+            warmupRound++
+          ) {
+            const benchmarkInput: BenchmarkInput = {
+              framework: testSiteName,
+              iteration,
+              warmupRound,
+              resultsPath: RESULTS_PATH,
+              link: `http://localhost:${options.serverPort}`,
+              profilerOptions: options.profilerOptions,
+              driverOptions: options.driverOptions,
+              setServerResultPath: server.setResultPath,
+              startServerMeasurement: server.startMeasurement,
+              stopServerMeasurement: server.stopMeasurement,
+            };
+
+            console.log(
+              `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (iteration ${iteration}/${options.iterations})  (round ${warmupRound}/${options.warmupRounds + 1})`,
+            );
+            await benchmark(benchmarkInput);
+          }
+          console.log("Finished testing and quit browser instance");
+        } finally {
+          // Terminate server
+          await server.terminate();
+        }
       }
     }
 

@@ -48,7 +48,8 @@ export type InputOptions = {
   serverPort: number;
   profilerOptions: ProfilerOptions;
   driverOptions: BuilderOptions;
-  repetitions: number;
+  iterations: number;
+  warmupRounds: number;
   chosenBenchmarks: string[];
   chosenFrameworks: TestSiteConfigs;
   benchmarksPath: string;
@@ -65,7 +66,8 @@ const inputOptions: InputOptions = {
     threads: [],
   },
   driverOptions: defaultBuilderOptions,
-  repetitions: 0,
+  iterations: 0,
+  warmupRounds: 0,
   chosenBenchmarks: [],
   chosenFrameworks: {},
   benchmarksPath: BENCHMARKS_PATH,
@@ -117,9 +119,14 @@ const program = new Command();
       ["GeckoMain"],
     )
     .option(
-      "--repetitions <repetitions...>",
-      `specify the number of test repetitions`,
+      "--iterations <iterations>",
+      `specify the number of test iterations`,
       "1",
+    )
+    .option(
+      "--warmup-rounds <warmup-rounds>",
+      `specify the number of warmup rounds for each test-case`,
+      "0",
     )
     .option(
       "--benchmarks <benchmarks...>",
@@ -252,22 +259,40 @@ const program = new Command();
     inputOptions.profilerOptions.threads = threads;
   }
 
-  /** Handle repetitions flag */
-  if (options.repetitions) {
-    const repetitions = Number.parseInt(options.repetitions);
+  /** Handle iterations flag */
+  if (options.iterations) {
+    const iterations = Number.parseInt(options.iterations);
 
-    if (Number.isNaN(repetitions)) {
+    if (Number.isNaN(iterations)) {
       throw new Error(
-        `"${options.repetitions}" is not a valid repetition count - is not an integer`,
+        `"${options.iterations}" is not a valid repetition count - is not an integer`,
       );
     }
 
-    if (repetitions <= 0)
+    if (iterations <= 0)
       throw new Error(
-        `"${options.repetitions}" is not a valid repetition count - must be larger than 0`,
+        `"${options.iterations}" is not a valid repetition count - must be larger than 0`,
       );
 
-    inputOptions.repetitions = repetitions;
+    inputOptions.iterations = iterations;
+  }
+
+  /** Handle warmup-rounds flag */
+  if (options.warmupRounds) {
+    const warmupRounds = Number.parseInt(options.warmupRounds);
+
+    if (Number.isNaN(warmupRounds)) {
+      throw new Error(
+        `"${options.warmupRounds}" is not a valid repetition count - is not an integer`,
+      );
+    }
+
+    if (warmupRounds < 0)
+      throw new Error(
+        `"${options.warmupRounds}" is not a valid repetition count - must be non-negative`,
+      );
+
+    inputOptions.warmupRounds = warmupRounds;
   }
 
   /** Handle benchmarks flag */

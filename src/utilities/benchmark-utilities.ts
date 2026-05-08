@@ -16,8 +16,11 @@ interface ProfilerWrapperOptions {
   /** Framework to be tested */
   framework: string;
 
-  /** Current repetition */
-  repetition: number;
+  /** Current benchmark iteration */
+  iteration: number;
+
+  /** Current test-case round */
+  warmupRound: number;
 
   /** Results path */
   resultsPath: string;
@@ -79,8 +82,8 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
     throw new Error("Failed to initialize Driver");
   }
 
-  const geckoOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}_client.json`;
-  const serverOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}_server.csv`;
+  const geckoOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.iteration}_${input.warmupRound}_client.json`;
+  const serverOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.iteration}_${input.warmupRound}_server.csv`;
 
   try {
     // Before benchmark / set server measurement output path
