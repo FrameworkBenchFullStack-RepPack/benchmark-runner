@@ -34,7 +34,7 @@ export const DATABASE_CONFIG: DatabaseConfigType = {
  * The key to every configuration must match the submodule name
  */
 export const TEST_SITE_CONFIG: TestSiteConfigs<CommandConfig> = {
-  "test-site-asp-net": {
+  "test-site-asp-net-htmx": {
     prepare: {
       command: "dotnet restore",
       modifyWorkingPath: (projectPath: string) =>
