@@ -113,18 +113,18 @@ export default async function startBenchmark(options: InputOptions) {
           await server.terminate();
           Logger.log("debug", `Terminated ${testSiteName} server`);
         }
-      }
-    }
 
-    /** Reset database if necessary */
-    if (DATABASE_CONFIG) {
-      Logger.log("debug", `Resetting database`);
-      await createAsyncProcess({
-        command: DATABASE_CONFIG.reset.command,
-        regex: DATABASE_CONFIG.reset.regex,
-        cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
-        stream: Stream.stderr,
-      });
+        /** Reset database if necessary */
+        if (DATABASE_CONFIG) {
+          Logger.log("debug", `Resetting database`);
+          await createAsyncProcess({
+            command: DATABASE_CONFIG.reset.command,
+            regex: DATABASE_CONFIG.reset.regex,
+            cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
+            stream: Stream.stderr,
+          });
+        }
+      }
     }
   }
 }
