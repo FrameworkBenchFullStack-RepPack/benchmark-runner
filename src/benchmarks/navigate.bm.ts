@@ -9,10 +9,13 @@ import {
   simulateClick,
 } from "../utilities/benchmark-utilities";
 import BenchmarkInput from "./benchmark-types";
+import Logger from "../utilities/logging";
 
 const BENCHMARK_NAME = "navigate" as const;
 
 async function scrollAndNavigate(driver: Driver, hrefSelector: string) {
+  Logger.log("debug", `Navigating via footer link to '${hrefSelector}'`);
+
   // Scroll to footer and open second static page
   await scrollToElement(driver, "footer");
 
@@ -23,6 +26,11 @@ async function scrollAndNavigate(driver: Driver, hrefSelector: string) {
 }
 
 export default async function benchmark(options: BenchmarkInput) {
+  Logger.log(
+    "debug",
+    `Starting '${BENCHMARK_NAME}' benchmark for ${options.framework}`,
+  );
+
   const prepareTest = async (driver: Driver) => {
     await prepareBrowser(driver);
   };
@@ -30,8 +38,7 @@ export default async function benchmark(options: BenchmarkInput) {
   const performTest = async (driver: Driver) => {
     await loadPage(driver, options.link);
 
-    // Scroll to footer and open second static page
-    for (const hrefSelector of [
+    const navigationPath = [
       "/static-1",
       "/static-2",
       "/live",
@@ -40,7 +47,15 @@ export default async function benchmark(options: BenchmarkInput) {
       "/static-2",
       "/static-1",
       "/",
-    ]) {
+    ];
+
+    Logger.log(
+      "debug",
+      `Walking navigation path of ${navigationPath.length} link(s)`,
+    );
+
+    // Scroll to footer and next link in path
+    for (const hrefSelector of navigationPath) {
       await scrollAndNavigate(driver, hrefSelector);
       await pageIsLoaded(driver);
     }
