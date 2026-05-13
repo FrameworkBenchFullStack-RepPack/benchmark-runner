@@ -153,6 +153,7 @@ export async function promisifiedTimeout(timeout: number): Promise<void> {
  * @param driver The driver to control the browser instance
  */
 export async function prepareBrowser(driver: Driver) {
+  Logger.log("debug", "Preparing browser - fullscreen and clear cookies");
   await promisifiedTimeout(1000);
   await driver.manage().window().fullscreen();
   await driver.manage().deleteAllCookies();
@@ -168,8 +169,10 @@ export async function prepareBrowser(driver: Driver) {
  * @param link The link that should be navigated to
  */
 export async function loadPage(driver: Driver, link: string) {
+  Logger.log("debug", `Navigating to: ${link}`);
   await driver.navigate().to(link);
   await pageIsLoaded(driver);
+  Logger.log("debug", `Finished loading: ${link}`);
 }
 
 /**
@@ -237,6 +240,10 @@ export async function scrollToElement(
   querySelector: string,
   elementIndex?: number,
 ) {
+  Logger.log(
+    "debug",
+    `Scrolling to element matching '${querySelector}'${elementIndex !== undefined ? ` (index ${elementIndex})` : ""}`,
+  );
   const script = `
     return new Promise(resolve => {
       const elem = ${elementIndex ? `document.querySelectorAll(arguments[0])[${elementIndex}]` : `document.querySelector(arguments[0])`};
@@ -259,6 +266,7 @@ export async function scrollToElement(
  * @param element Clickable element to be clicked
  */
 export async function simulateClick(driver: Driver, element: WebElement) {
+  Logger.log("debug", "Simulating click - hovering then clicking element");
   // Hover over element before clicking
   await driver
     .actions({ async: true })

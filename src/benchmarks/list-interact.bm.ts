@@ -6,10 +6,16 @@ import {
 } from "../utilities/benchmark-utilities";
 import BenchmarkInput from "./benchmark-types";
 import { testList } from "./elements/list";
+import Logger from "../utilities/logging";
 
 const BENCHMARK_NAME = "list-interact" as const;
 
 export default async function benchmark(options: BenchmarkInput) {
+  Logger.log(
+    "debug",
+    `Starting '${BENCHMARK_NAME}' benchmark for ${options.framework}`,
+  );
+
   const prepareTest = async (driver: Driver) => {
     await prepareBrowser(driver);
   };
@@ -17,6 +23,7 @@ export default async function benchmark(options: BenchmarkInput) {
   const performTest = async (driver: Driver) => {
     await loadPage(driver, options.link + "/list/");
 
+    Logger.log("debug", "Beginning list interactions on /list page");
     await testList(driver);
   };
 
