@@ -51,24 +51,22 @@ Usage: Benchmark Runner [options]
 A CLI for running performance focused benchmarks in the Firefox browser, using selenium
 
 Options:
-  -V, --version                        output the version number
-  -p, --port                           specify port used for serving the websites
-  -l, --log-level <log-level>          specify which logs to print to terminal (debug, info, warning, error, off) (default: "error")
-  -d, --debug                          launch browser instances with debugger
-  --entries <entries>                  specify the buffer size used in the profiler (default: "20000000")
-  --interval <interval>                specify the profiler logging interval (ms) (default: "100")
-  --features <features...>             specify the logged features. Available features: stackwalk, js, cpu, memory, nostacksampling, mainthreadio, fileioall, nomarkerstacks, seqstyle,
-                                       screenshots, ipcmessages, jsallocations, audiocallbacktracing, bandwidth, sandbox, flows, cpuallthreads, samplingallthreads, markersallthreads,
-                                       unregisteredthreads, processcpu, power, tracing (default: ["power","bandwidth"])
-  --threads <threads...>               specify the logged threads. Available threads: GeckoMain, Compositor, DOM Worker, Renderer, RendererBackend, Timer, StyleThread, Socket Thread,
-                                       StreamTrans, ImgDecoder, DNS Resolver, TaskController (default: ["GeckoMain"])
-  --repetitions <repetitions...>       specify the number of test repetitions (default: "1")
-  --benchmarks <benchmarks...>         specify the benchmarks. Available benchmarks: home-interact, list-interact, list, live, navigate, startup, static (default: ["startup","static",
-                                       "live","list","list-interact","home-interact","navigate"])
-  --test-sites <test-sites...>         specify the test-sites. Available test-sites: test-site-asp-net-htmx, test-site-ruby-rails-hotwire, test-site-ruby-rails-htmx, test-site-astro-htmx,
-                                       test-site-nextjs, test-site-django-htmx, test-site-spring-boot-htmx
-  --process-energy-measurement <path>  path to the process-energy-measurement executable. Enables measuring the server process
-  -h, --help                           display help for command
+  -V, --version                          output the version number
+  -p, --port <port>                      specify port used for serving the websites (default: "1337")
+  --log-level <log-level>                specify which logs the benchmark runner should print to terminal (debug, info, warning, error, off) (default: "error")
+  --log-level-server <log-level-server>  specify which logs the server should print to terminal (debug, info, warning, error, off) (default: "error")
+  -d, --debug                            launch browser instances with debugger
+  --entries <entries>                    specify the buffer size used in the profiler (default: "20000000")
+  --interval <interval>                  specify the profiler logging interval (ms) (default: "100")
+  --features <features...>               specify the logged features. Available features: stackwalk, js, cpu, memory, nostacksampling, mainthreadio, fileioall, nomarkerstacks, seqstyle, screenshots, ipcmessages, jsallocations, audiocallbacktracing, bandwidth,
+                                         sandbox, flows, cpuallthreads, samplingallthreads, markersallthreads, unregisteredthreads, processcpu, power, tracing (default: ["power","bandwidth"])
+  --threads <threads...>                 specify the logged threads. Available threads: GeckoMain, Compositor, DOM Worker, Renderer, RendererBackend, Timer, StyleThread, Socket Thread, StreamTrans, ImgDecoder, DNS Resolver, TaskController (default:
+                                         ["GeckoMain"])
+  --repetitions <repetitions...>         specify the number of test repetitions (default: "1")
+  --benchmarks <benchmarks...>           specify the benchmarks. Available benchmarks: home-interact, list-interact, list, live, navigate, startup, static (default: ["startup","static","live","list","list-interact","home-interact","navigate"])
+  --test-sites <test-sites...>           specify the test-sites. Available test-sites: test-site-asp-net-htmx, test-site-ruby-rails-hotwire, test-site-ruby-rails-htmx, test-site-astro-htmx, test-site-nextjs, test-site-django-htmx, test-site-spring-boot-htmx
+  --process-energy-measurement <path>    path to the process-energy-measurement executable. Enables measuring the server process
+  -h, --help                             display help for command
 ```
 
 ## License
