@@ -4,6 +4,8 @@ import { existsSync } from "fs";
 import { Builder, Capabilities } from "selenium-webdriver";
 import { Driver, ServiceBuilder, Options } from "selenium-webdriver/firefox";
 
+import Logger from "../logging";
+
 /** Default Firefox executable locations */
 const firefoxExecutableMap: Partial<Record<NodeJS.Platform, string>> = {
   darwin: "/Applications/Firefox.app/Contents/MacOS/firefox",
@@ -49,10 +51,16 @@ function validateExecutables(): {
     );
 
   if (!(platform === "darwin" && architecture === "arm64")) {
-    console.warn(
-      "WARNING: This combination of platform and architecture does not support per-process power measurements in Firefox.",
+    Logger.log(
+      "warning",
+      "This combination of platform and architecture does not support per-process power measurements in Firefox.",
     );
   }
+
+  Logger.log(
+    "debug",
+    `Resolved executables - Firefox: ${firefoxPath}, geckodriver: ${geckodriverPath}`,
+  );
 
   return { firefoxPath, geckodriverPath };
 }
@@ -72,6 +80,11 @@ export const defaultSettings: BuilderOptions = {
 export async function buildWebDriver(
   options: BuilderOptions = defaultSettings,
 ): Promise<Driver | undefined> {
+  Logger.log(
+    "debug",
+    `Building webdriver - headless: ${options.headless}, debug: ${options.debug}`,
+  );
+
   const browserOptions = new Options();
   const capabilities = Capabilities.firefox();
   capabilities.setPageLoadStrategy("normal");
@@ -123,5 +136,6 @@ export async function buildWebDriver(
   // Build driver and return
   const driver = await builder.build();
 
+  Logger.log("debug", "Webdriver built successfully");
   return driver as Driver;
 }

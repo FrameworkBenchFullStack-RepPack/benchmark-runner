@@ -6,13 +6,15 @@ import {
 } from "./worker-types.ts";
 import { spawn } from "child_process";
 import { type OutputChannel } from "../../types/test-sites.ts";
-
-const logError = (...args: string[]) => {
-  console.error("Server worker error - ,", ...args);
-};
+import Logger from "../logging.ts";
 
 (async () => {
   const workerConfig: BaseWorkerData = workerData;
+
+  Logger.log(
+    "debug",
+    `Spawning server process: '${workerConfig.serverCommand}' (cwd: ${workerConfig.cwd})`,
+  );
 
   const serverProcess = spawn(workerConfig.serverCommand, {
     cwd: workerConfig.cwd,
@@ -33,16 +35,26 @@ const logError = (...args: string[]) => {
 
   const handleText = (channel: OutputChannel, input: any) => {
     const text = input.toString();
-    if (workerConfig.logLevel == "debug") logError(`${channel}:`, text);
+    Logger.log("debug", `Server ${channel}:`, text);
 
     if (workerConfig.startDetectionRegex.channel === channel) {
       try {
         // Create regex
         const regexp = new RegExp(workerConfig.startDetectionRegex.regex);
 
-        if (regexp.test(text)) parentPort?.postMessage(readyMessage);
+        if (regexp.test(text)) {
+          Logger.log(
+            "debug",
+            "Server start regex matched - signaling ready to parent",
+          );
+          parentPort?.postMessage(readyMessage);
+        }
       } catch (e) {
-        console.error("Process worker threw with: ", e);
+        Logger.log(
+          "error",
+          "Server worker failed while processing output: ",
+          e,
+        );
       }
     }
   };
@@ -52,7 +64,8 @@ const logError = (...args: string[]) => {
   serverProcess.stdout.on("data", (data) => handleText("stdout", data));
 
   /* Server process close handling */
-  serverProcess.on("exit", () => {
+  serverProcess.on("exit", (code) => {
+    Logger.log("debug", `Server process exited with code: ${code}`);
     process.exit(0);
   });
 
@@ -62,19 +75,29 @@ const logError = (...args: string[]) => {
 
   const terminateServer = () => {
     if (serverProcess.pid === undefined) {
-      logError("Attempted to terminate server but pid is undefined");
+      Logger.log(
+        "warning",
+        "Attempted to terminate server but pid is undefined",
+      );
       return;
     }
+
+    Logger.log(
+      "debug",
+      `Terminating server process group (pid: ${serverProcess.pid})`,
+    );
 
     try {
       // Kill the whole process group.
       process.kill(-serverProcess.pid, "SIGTERM");
     } catch (error: any) {
       if (error.code !== "ESRCH") {
+        Logger.log("error", "Failed to terminate server process: ", error);
         throw error;
       }
 
       // Process / process group is already gone.
+      Logger.log("debug", "Server process group was already gone on terminate");
       return;
     }
   };
@@ -83,6 +106,7 @@ const logError = (...args: string[]) => {
   parentPort?.on("message", async (message) => {
     switch (message?.type) {
       case MessageType.Terminate:
+        Logger.log("debug", "Received Terminate message from parent");
         terminateServer();
         break;
     }

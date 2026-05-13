@@ -4,6 +4,7 @@ import {
   promisifiedTimeout,
   simulateClick,
 } from "../../utilities/benchmark-utilities";
+import Logger from "../../utilities/logging";
 
 /**
  * A map corresponding each sort method to the first name in the list if it is sorted correctly.
@@ -30,8 +31,9 @@ async function firstNameIs(driver: Driver, name: string) {
       );
       return name === (await element.getText());
     } catch (error) {
-      console.warn(
-        `WARNING: DOM was changed while checking the name of the first list entry, rerunning the check. Cause: ${(error as Error)?.message}`,
+      Logger.log(
+        "warning",
+        `DOM was changed while checking the name of the first list entry, rerunning the check. Cause: ${(error as Error)?.message}`,
       );
       return false;
     }
@@ -66,8 +68,9 @@ async function maxAgeIs(driver: Driver, maxAge: number | null) {
       }
       return maxFoundAge <= maxAge;
     } catch (error) {
-      console.warn(
-        `WARNING: DOM was changed while checking the ages of list entries, rerunning the check. Cause: ${(error as Error)?.message}`,
+      Logger.log(
+        "warning",
+        `DOM was changed while checking the ages of list entries, rerunning the check. Cause: ${(error as Error)?.message}`,
       );
       return false;
     }
@@ -95,8 +98,9 @@ async function categoriesPresent(driver: Driver, amount: number) {
       }
       return categories.size === amount;
     } catch (error) {
-      console.warn(
-        `WARNING: DOM was changed while checking the categories of list entries, rerunning the check. Cause: ${(error as Error)?.message}`,
+      Logger.log(
+        "warning",
+        `DOM was changed while checking the categories of list entries, rerunning the check. Cause: ${(error as Error)?.message}`,
       );
       return false;
     }

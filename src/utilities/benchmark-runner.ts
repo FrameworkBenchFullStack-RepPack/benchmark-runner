@@ -8,6 +8,7 @@ import type BenchmarkInput from "../benchmarks/benchmark-types";
 import { loadBenchmarks } from "./benchmark-file-helper";
 import { createAsyncProcess, Stream } from "./process-helper";
 import { createServerController } from "./server-worker/create-server-controller";
+import Logger from "./logging";
 
 const RESULTS_ROOT = path.resolve(process.cwd(), "profiler-results");
 const RESULTS_PATH = path.resolve(
@@ -22,11 +23,11 @@ const RESULTS_PATH = path.resolve(
  */
 export default async function startBenchmark(options: InputOptions) {
   if (options.processEnergyMeasurementPath)
-    console.log("Server process energy measurement enabled");
+    Logger.log("info", "Server process energy measurement enabled");
 
   /** Start database if necessary */
   if (DATABASE_CONFIG) {
-    console.log("Starting database");
+    Logger.log("info", "Starting database");
     await createAsyncProcess({
       command: DATABASE_CONFIG.start.command,
       regex: DATABASE_CONFIG.start.regex,
@@ -41,11 +42,21 @@ export default async function startBenchmark(options: InputOptions) {
 
   /** Determine test-sites to be benchmarked */
   const testSites = options.chosenFrameworks;
+  Logger.log(
+    "info",
+    "Testing configured for - ",
+    ...Object.keys(testSites).join(", "),
+  );
 
   /** Loop through every repetitions */
   for (let repetition = 1; repetition <= options.repetitions; repetition++) {
     /** Loop through every test-site and perform the benchmark */
     for (const [testSiteName, testSiteConfig] of Object.entries(testSites)) {
+      Logger.log(
+        "debug",
+        `Performing iteration '${repetition}' on test-site '${testSiteName}'`,
+      );
+
       const server = createServerController(
         options,
         testSiteName,
@@ -76,22 +87,27 @@ export default async function startBenchmark(options: InputOptions) {
           benchmarkIndex,
           [benchmarkName, benchmark],
         ] of benchmarks.entries()) {
-          console.log(
+          Logger.log(
+            "info",
             `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (repetition ${repetition}/${options.repetitions})`,
           );
           await benchmark(benchmarkInput);
         }
 
-        console.log("Finished testing and quit browser instance");
+        Logger.log(
+          "info",
+          `Finished iteration ${repetition} for ${testSiteName}`,
+        );
       } finally {
         // Terminate server
         await server.terminate();
+        Logger.log("debug", `Terminated ${testSiteName} server`);
       }
     }
 
     /** Reset database if necessary */
     if (DATABASE_CONFIG) {
-      console.log("Resetting database");
+      Logger.log("debug", `Resetting database`);
       await createAsyncProcess({
         command: DATABASE_CONFIG.reset.command,
         regex: DATABASE_CONFIG.reset.regex,

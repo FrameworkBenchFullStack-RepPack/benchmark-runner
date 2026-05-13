@@ -8,13 +8,15 @@ import {
   type ProcessMessage,
 } from "./worker-types.ts";
 import { spawn } from "child_process";
-
-const logError = (...args: string[]) => {
-  console.error(...args);
-};
+import Logger from "../logging.ts";
 
 (async () => {
   const workerConfig: MeasuringWorkerData = workerData;
+
+  Logger.log(
+    "debug",
+    `Spawning process-measuring-tool: '${workerConfig.processMeasurementExecutable}' wrapping '${workerConfig.serverCommand}' (cwd: ${workerConfig.cwd})`,
+  );
 
   const serverProcess = spawn(
     workerConfig.processMeasurementExecutable,
@@ -43,7 +45,7 @@ const logError = (...args: string[]) => {
   };
 
   serverProcess.stderr.on("data", (data) => {
-    logError(data.toString());
+    Logger.log("error", "Measuring server stderr:", data.toString());
   });
 
   /* Server process stdout handling */
@@ -55,16 +57,25 @@ const logError = (...args: string[]) => {
       if (!checkIncomingJson(json)) throw new Error("Invalid message");
       switch (json.type) {
         case ProcessMessageTypes.measurement_ready:
+          Logger.log(
+            "debug",
+            "Measurement tool reported ready - signaling ready to parent",
+          );
           parentPort?.postMessage(readyMessage);
           break;
       }
     } catch (e) {
-      console.error("Process worker threw with: ", e);
+      Logger.log(
+        "error",
+        "Measuring server worker failed while processing output: ",
+        e,
+      );
     }
   });
 
   /* Server process close handling */
-  serverProcess.on("exit", () => {
+  serverProcess.on("exit", (code) => {
+    Logger.log("debug", `Measuring server process exited with code: ${code}`);
     process.exit(0);
   });
 
@@ -83,6 +94,7 @@ const logError = (...args: string[]) => {
   parentPort?.on("message", async (message) => {
     switch (message?.type) {
       case MessageType.Start:
+        Logger.log("debug", "Forwarding Start to measurement tool");
         const startMeasurements: ProcessMessage = {
           type: ProcessMessageTypes.measurement_start,
         };
@@ -90,6 +102,7 @@ const logError = (...args: string[]) => {
         sendMessage(JSON.stringify(startMeasurements));
         break;
       case MessageType.Stop:
+        Logger.log("debug", "Forwarding Stop to measurement tool");
         const stopMeasurements: ProcessMessage = {
           type: ProcessMessageTypes.measurement_stop,
         };
@@ -97,6 +110,10 @@ const logError = (...args: string[]) => {
         sendMessage(JSON.stringify(stopMeasurements));
         break;
       case MessageType.SetOutputPath:
+        Logger.log(
+          "debug",
+          `Forwarding SetOutputPath to measurement tool: ${message.payload.path}`,
+        );
         const setOutputPath: ProcessMessage = {
           type: ProcessMessageTypes.set_output_path,
           payload: { path: message.payload.path },
@@ -105,6 +122,7 @@ const logError = (...args: string[]) => {
         sendMessage(JSON.stringify(setOutputPath));
         break;
       case MessageType.Terminate:
+        Logger.log("debug", "Received Terminate message from parent");
         terminateServer();
         break;
     }
