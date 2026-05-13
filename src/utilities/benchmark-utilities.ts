@@ -130,8 +130,10 @@ export async function promisifiedTimeout(timeout: number): Promise<void> {
  * @param driver The driver to control the browser instance
  */
 export async function prepareBrowser(driver: Driver) {
+  await promisifiedTimeout(1000);
   await driver.manage().window().fullscreen();
   await driver.manage().deleteAllCookies();
+  await promisifiedTimeout(1000);
 }
 
 /**
