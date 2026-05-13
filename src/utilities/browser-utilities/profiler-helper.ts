@@ -1,5 +1,6 @@
 import { Driver } from "selenium-webdriver/firefox";
-import { runScriptInChrome, runScriptInChromeAsync } from "./script-runners";
+import { runScriptInChrome } from "./script-runners";
+import Logger from "../logging";
 
 export enum ProfilerFeatures {
   "Native Stack" = "stackwalk",
@@ -89,7 +90,10 @@ export default class ProfilerHandler {
   }
 
   async start(options: ProfilerOptions) {
-    console.log(this.#startScript(options));
+    Logger.log(
+      "debug",
+      `Starting Gecko profiler - entries: ${options.entries}, interval: ${options.interval}ms, features: [${options.features.join(", ")}], threads: [${options.threads.join(", ")}]`,
+    );
     await runScriptInChrome(
       "PROFILER-START",
       this.#driver,
@@ -98,18 +102,21 @@ export default class ProfilerHandler {
   }
 
   async end(filePath: string) {
+    Logger.log("debug", "Pausing Gecko profiler");
     await runScriptInChrome(
       "PROFILER-PAUSE",
       this.#driver,
       this.#pauseScript(),
     );
 
+    Logger.log("debug", `Collecting profiler data to: ${filePath}`);
     await runScriptInChrome(
       "PROFILER-COLLECT-DATA",
       this.#driver,
       this.#collectDataScript(filePath),
     );
 
+    Logger.log("debug", "Stopping Gecko profiler");
     await runScriptInChrome("PROFILER-END", this.#driver, this.#endScript());
   }
 }

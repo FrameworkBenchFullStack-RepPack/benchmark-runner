@@ -1,5 +1,7 @@
 import { Driver, Context } from "selenium-webdriver/firefox";
 
+import Logger from "../logging";
+
 /**
  * Function to execute JavaScript in the Chrome of Firefox
  * @param driver Driver used to execute script
@@ -18,7 +20,11 @@ export async function runScript(
 
     return typeof result === "string" ? result : undefined;
   } catch (error) {
-    console.error(`Couldn't execute script named ${name}. Error:`, error);
+    Logger.log(
+      "error",
+      `Couldn't execute script named ${name}. Error: `,
+      error,
+    );
     throw error;
   }
 }
@@ -45,7 +51,7 @@ export async function runScriptInChrome(
     await driver.setContext(prevContext);
     return result;
   } catch (error) {
-    console.error(`Execution of ${name} failed in the browser chrome`);
+    Logger.log("error", `Execution of ${name} failed in the browser chrome`);
     await driver.setContext(prevContext);
     throw error;
   }
@@ -73,7 +79,11 @@ export async function runScriptAsync(
 
     return typeof result === "string" ? result : undefined;
   } catch (error) {
-    console.error(`Couldn't execute script named ${name}. Error:`, error);
+    Logger.log(
+      "error",
+      `Couldn't execute script named ${name}. Error: `,
+      error,
+    );
     throw error;
   }
 }
@@ -99,7 +109,10 @@ export async function runScriptInChromeAsync(
     await driver.setContext(prevContext);
     return result;
   } catch (error) {
-    console.error(`Async execution of ${name} failed in the browser chrome`);
+    Logger.log(
+      "error",
+      `Async execution of ${name} failed in the browser chrome`,
+    );
     await driver.setContext(prevContext);
     throw error;
   }

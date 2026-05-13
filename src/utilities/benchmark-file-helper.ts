@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "url";
 
+import Logger from "./logging";
+
 // The postfix used for benchmark files
 const BENCHMARK_FILE_EXTENSION = ".bm.ts";
 
@@ -17,12 +19,25 @@ async function loadAndMapFiles<T>(
   mappingFunc: (_: [fileName: string, file: any]) => T,
   fileFilter?: (fileName: string) => boolean,
 ) {
+  Logger.log("debug", `Loading benchmark files from directory: ${dir}`);
+
   let files = fs
     .readdirSync(dir)
     .filter((f) => f.endsWith(BENCHMARK_FILE_EXTENSION));
 
+  Logger.log(
+    "debug",
+    `Found ${files.length} benchmark file(s) in directory: ${files.join(", ")}`,
+  );
+
   // Filter files if relevant
-  if (fileFilter) files = files.filter(fileFilter);
+  if (fileFilter) {
+    files = files.filter(fileFilter);
+    Logger.log(
+      "debug",
+      `After filtering, ${files.length} benchmark file(s) remain: ${files.join(", ")}`,
+    );
+  }
 
   // Import and process all benchmark files
   const mappedFiles = await Promise.all(
@@ -65,6 +80,18 @@ export async function loadBenchmarks(
     (bm): bm is [string, Function] => typeof bm[1] === "function",
   );
 
+  if (functions.length !== benchmarks.length) {
+    Logger.log(
+      "warning",
+      `Loaded ${functions.length} of ${benchmarks.length} requested benchmarks - some did not export a default function`,
+    );
+  } else {
+    Logger.log(
+      "debug",
+      `Loaded ${functions.length} benchmark function(s) successfully`,
+    );
+  }
+
   // Return functions in sorted order
   return functions.sort(
     (a, b) => benchmarks.indexOf(a[0]) - benchmarks.indexOf(b[0]),
@@ -94,6 +121,11 @@ export async function getBenchmarkNames(dir: string) {
  * @returns Names of the valid benchmarks in the given directory
  */
 export async function validateBenchmarks(dir: string, benchmarks: string[]) {
+  Logger.log(
+    "debug",
+    `Validating ${benchmarks.length} benchmark(s): ${benchmarks.join(", ")}`,
+  );
+
   // Import and process all benchmarks
   const benchmarkChecks = await Promise.all(
     benchmarks.map(async (bm) => {
@@ -105,5 +137,13 @@ export async function validateBenchmarks(dir: string, benchmarks: string[]) {
     }),
   );
 
-  return !benchmarkChecks.includes(false);
+  const isValid = !benchmarkChecks.includes(false);
+  if (!isValid) {
+    Logger.log(
+      "warning",
+      `One or more benchmarks failed validation - missing a default function export`,
+    );
+  }
+
+  return isValid;
 }

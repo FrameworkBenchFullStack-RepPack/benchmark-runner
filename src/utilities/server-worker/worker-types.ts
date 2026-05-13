@@ -1,6 +1,5 @@
 import { type StartDetectionRegex } from "../../types/test-sites.ts";
-
-export type LogLevel = "debug" | "info" | "warning" | "error" | "off";
+import { type LogLevel } from "../logging.ts";
 
 export const MessageType = {
   Ready: 0,

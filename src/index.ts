@@ -25,7 +25,7 @@ import {
 } from "./utilities/browser-utilities/driver-builder";
 import { createAsyncProcess, Stream } from "./utilities/process-helper";
 import { ConfigStep } from "./types/database";
-import { LogLevel } from "./utilities/server-worker/worker-types";
+import Logger, { isLogLevel, type LogLevel } from "./utilities/logging";
 
 const BENCHMARKS_PATH = path.resolve(import.meta.dirname, "./benchmarks/");
 
@@ -44,7 +44,7 @@ for (const [name, siteConfig] of Object.entries(config.TEST_SITE_CONFIG)) {
 }
 
 export type InputOptions = {
-  logLevel: LogLevel;
+  serverLogLevel: LogLevel;
   serverPort: number;
   profilerOptions: ProfilerOptions;
   driverOptions: BuilderOptions;
@@ -57,7 +57,7 @@ export type InputOptions = {
 };
 
 const inputOptions: InputOptions = {
-  logLevel: "error",
+  serverLogLevel: "error",
   serverPort: 0,
   profilerOptions: {
     entries: 0,
@@ -89,8 +89,13 @@ const program = new Command();
       "1337",
     )
     .option(
-      "-l, --log-level <log-level>",
-      "specify which logs to print to terminal (debug, info, warning, error, off)",
+      "--log-level <log-level>",
+      "specify which logs the benchmark runner should print to terminal (debug, info, warning, error, off)",
+      "error",
+    )
+    .option(
+      "--log-level-server <log-level-server>",
+      "specify which logs the server should print to terminal (debug, info, warning, error, off)",
       "error",
     )
     .option("-d, --debug", "launch browser instances with debugger")
@@ -172,21 +177,21 @@ const program = new Command();
     inputOptions.driverOptions.debug = true;
   }
 
-  /** Handle log-level flag */
-  if (options.logLevel) {
-    const level = options.logLevel;
-
-    if (
-      typeof level === "string" &&
-      (level === "debug" ||
-        level === "info" ||
-        level === "warning" ||
-        level === "error" ||
-        level === "off")
-    ) {
-      inputOptions.logLevel = level;
+  /** Handle log-level flags */
+  const handleLogLevel = (option: unknown, fn: (level: LogLevel) => void) => {
+    if (!option || !isLogLevel(option)) {
+      throw new Error(`Provided log level is invalid`);
     }
-  }
+
+    fn(option);
+  };
+
+  handleLogLevel(options.logLevel, (l) => {
+    Logger.level = l;
+  });
+  handleLogLevel(options.logLevelServer, (l) => {
+    inputOptions.serverLogLevel = l;
+  });
 
   /** Handle entries flag */
   if (options.entries) {
@@ -354,7 +359,7 @@ const program = new Command();
       options.processEnergyMeasurement;
   }
 
-  console.log("Successfully parsed input parameters");
+  Logger.log("info", "Successfully parsed input parameters");
 
   // Run db prepare and start script
   if (config.DATABASE_CONFIG) {
@@ -364,7 +369,7 @@ const program = new Command();
     ];
 
     for (const [step, configStep] of dbSteps) {
-      console.log(step);
+      Logger.log("debug", "Database preparation step - ", step);
       await createAsyncProcess({
         command: configStep.command,
         cwd: `${config.SUBMODULES_PATH}/${config.DATABASE_CONFIG.submoduleName}`,
@@ -375,13 +380,19 @@ const program = new Command();
   }
 
   // Run test-site prepare script
-  console.log("Preparing test-sites");
+  Logger.log("info", "Preparing test-sites");
   await Promise.all(
     Object.entries(TRANSFORMED_TEST_SITE_CONFIG).map(
       async ([name, testSiteConfig]) => {
         const shouldBeTested =
           inputOptions.chosenFrameworks === undefined ||
           name in inputOptions.chosenFrameworks;
+
+        Logger.log("debug", `${name} should be tested: ${shouldBeTested}`);
+        Logger.log(
+          "debug",
+          `${name} has preparation config: ${testSiteConfig.prepare ? true : false}`,
+        );
 
         if (!shouldBeTested || !testSiteConfig.prepare) return;
 
@@ -401,6 +412,6 @@ const program = new Command();
     ),
   );
 
-  console.log("Starting benchmark");
+  Logger.log("info", "Finished preparation - starting benchmark");
   await startBenchmark(inputOptions);
 })();

@@ -8,6 +8,7 @@ import ProfilerHandler, {
   ProfilerOptions,
 } from "./browser-utilities/profiler-helper";
 import { runScript } from "./browser-utilities/script-runners";
+import Logger from "./logging";
 
 interface ProfilerWrapperOptions {
   /** Name of the benchmark */
@@ -76,37 +77,56 @@ interface ProfilerWrapperOptions {
  * @param {ProfilerWrapperOptions} input See {@link ProfilerWrapperOptions} for details
  */
 export async function profilerWrapper(input: ProfilerWrapperOptions) {
+  Logger.log(
+    "debug",
+    `Starting profilerWrapper for benchmark '${input.benchmarkName}' on framework '${input.framework}' (repetition ${input.repetition})`,
+  );
+
   const driver = await buildWebDriver(input.driverOptions);
 
   if (!driver) {
+    Logger.log("error", "Failed to initialize Driver");
     throw new Error("Failed to initialize Driver");
   }
 
   const geckoOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.iteration}_${input.warmupRound}_client.json`;
   const serverOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.iteration}_${input.warmupRound}_server.csv`;
 
+  Logger.log("debug", `Client profiler output path: ${geckoOutputPath}`);
+  Logger.log("debug", `Server measurement output path: ${serverOutputPath}`);
+
   try {
     // Before benchmark / set server measurement output path
     input.setServerResultPath(serverOutputPath);
-    if (input.beforeBM) await input.beforeBM(driver);
+    if (input.beforeBM) {
+      Logger.log("debug", "Running beforeBM hook");
+      await input.beforeBM(driver);
+    }
 
     // Configure and start profiler and server measurements
     const profilerHandler = new ProfilerHandler(driver);
+    Logger.log("debug", "Starting server measurement and profiler");
     input.startServerMeasurement();
     await profilerHandler.start(input.profilerOptions);
 
     // Run benchmark
+    Logger.log("debug", `Running benchmark '${input.benchmarkName}'`);
     await input.performBM(driver);
 
     // Stop profiler and server and store data
+    Logger.log("debug", "Stopping server measurement and profiler");
     input.stopServerMeasurement();
     await profilerHandler.end(geckoOutputPath);
 
     // Clean up after the test
-    if (input.afterBM) await input.afterBM(driver);
+    if (input.afterBM) {
+      Logger.log("debug", "Running afterBM hook");
+      await input.afterBM(driver);
+    }
   } finally {
     // Always quit safely
     try {
+      Logger.log("debug", "Quitting webdriver");
       await driver.quit();
     } catch (quitErr) {
       // Ignore session errors on quit
@@ -114,7 +134,7 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
         quitErr instanceof Error &&
         !quitErr.message.includes("NoSuchSessionError")
       ) {
-        console.error("Error quitting driver:", quitErr);
+        Logger.log("error", "Error quitting driver:", quitErr);
       }
     }
   }
@@ -133,8 +153,10 @@ export async function promisifiedTimeout(timeout: number): Promise<void> {
  * @param driver The driver to control the browser instance
  */
 export async function prepareBrowser(driver: Driver) {
+  await promisifiedTimeout(1000);
   await driver.manage().window().fullscreen();
   await driver.manage().deleteAllCookies();
+  await promisifiedTimeout(1000);
 }
 
 /**
@@ -194,8 +216,9 @@ export async function* traverseElements(
       element = candidate;
       length = elements.length;
     } catch (error) {
-      console.warn(
-        `WARNING: DOM was changed after scrolling to a new element with selector "${selector}" at index ${index}, retrying selction of the new element. Cause: ${(error as Error)?.message}`,
+      Logger.log(
+        "warning",
+        `DOM was changed after scrolling to a new element with selector "${selector}" at index ${index}, retrying selection of the new element. Cause: ${(error as Error)?.message}`,
       );
       continue;
     }

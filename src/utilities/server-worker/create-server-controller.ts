@@ -12,6 +12,7 @@ import {
   MessageType,
   type MessageStructures,
 } from "./worker-types";
+import Logger from "../logging";
 
 const NON_MEASURING_SERVER_WORKER_PATH = path.resolve(
   import.meta.dirname,
@@ -36,7 +37,10 @@ export function createServerController(
   testSiteName: string,
   testSiteConfig: TestSiteConfig,
 ): ServerController {
+  Logger.log("debug", `Creating server controller for ${testSiteName}`);
+
   const isMeasuringServer = options.processEnergyMeasurementPath !== undefined;
+  Logger.log("debug", `Using process-measuring-tool: ${isMeasuringServer}`);
 
   const workerPath = isMeasuringServer
     ? MEASURING_SERVER_WORKER_PATH
@@ -53,7 +57,7 @@ export function createServerController(
   };
 
   const workerData: BaseWorkerData | MeasuringWorkerData = {
-    logLevel: options.logLevel,
+    logLevel: options.serverLogLevel,
     measurementInterval: options.profilerOptions.interval,
     serverCommand: testSiteConfig.start.command,
     startDetectionRegex: testSiteConfig.startDetectionRegex,
@@ -65,6 +69,7 @@ export function createServerController(
     }),
   };
 
+  Logger.log("debug", `Starting worker at: `, workerPath);
   const worker = new Worker(workerPath, {
     workerData,
   });
@@ -105,8 +110,10 @@ export function createServerController(
     worker.once("exit", onExit);
 
     try {
+      Logger.log("debug", "Waiting for server ready message");
       while (true) {
         const [message] = await once(worker, "message");
+        Logger.log("debug", "Got ready message from server: ", message);
 
         if (message?.type === MessageType.Ready) {
           break;
@@ -121,6 +128,7 @@ export function createServerController(
 
   // Post terminate message and wait for termination
   const terminate = async (): Promise<void> => {
+    Logger.log("debug", "Sending terminate message to worker");
     post({ type: MessageType.Terminate });
     await once(worker, "exit");
   };
