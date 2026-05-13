@@ -31,7 +31,7 @@ class Logger {
     )
       return;
 
-    console.log(`[${messageLevel}] `, ...content);
+    console.log(`[${messageLevel.toUpperCase()}] `, ...content);
   }
 }
 

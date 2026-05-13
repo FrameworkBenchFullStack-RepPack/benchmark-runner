@@ -87,12 +87,12 @@ const program = new Command();
       "1337",
     )
     .option(
-      "-l, --log-level <log-level>",
+      "--log-level <log-level>",
       "specify which logs the benchmark runner should print to terminal (debug, info, warning, error, off)",
       "error",
     )
     .option(
-      "-ls, --log-level-server <log-level-server>",
+      "--log-level-server <log-level-server>",
       "specify which logs the server should print to terminal (debug, info, warning, error, off)",
       "error",
     )
