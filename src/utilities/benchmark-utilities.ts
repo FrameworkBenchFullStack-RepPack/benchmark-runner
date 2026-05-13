@@ -79,7 +79,7 @@ interface ProfilerWrapperOptions {
 export async function profilerWrapper(input: ProfilerWrapperOptions) {
   Logger.log(
     "debug",
-    `Starting profilerWrapper for benchmark '${input.benchmarkName}' on framework '${input.framework}' (repetition ${input.repetition})`,
+    `Starting profilerWrapper for benchmark '${input.benchmarkName}' on framework '${input.framework}' (repetition ${input.iteration})`,
   );
 
   const driver = await buildWebDriver(input.driverOptions);
