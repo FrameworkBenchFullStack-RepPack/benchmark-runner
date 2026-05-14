@@ -2,7 +2,7 @@ import { By, until, WebElement } from "selenium-webdriver";
 import { Driver } from "selenium-webdriver/firefox";
 import {
   BuilderOptions,
-  buildWebDriver,
+  getWebDriver,
 } from "./browser-utilities/driver-builder";
 import ProfilerHandler, {
   ProfilerOptions,
@@ -82,7 +82,7 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
     `Starting profilerWrapper for benchmark '${input.benchmarkName}' on framework '${input.framework}' (repetition ${input.iteration})`,
   );
 
-  const driver = await buildWebDriver(input.driverOptions);
+  const driver = await getWebDriver(input.driverOptions);
 
   if (!driver) {
     Logger.log("error", "Failed to initialize Driver");
