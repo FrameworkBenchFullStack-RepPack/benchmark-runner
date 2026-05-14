@@ -5,6 +5,11 @@ import { Builder, Capabilities } from "selenium-webdriver";
 import { Driver, ServiceBuilder, Options } from "selenium-webdriver/firefox";
 
 import Logger from "../logging";
+import { promisifiedTimeout } from "../benchmark-utilities";
+
+/** Constants */
+const MAX_RETRIES = 5;
+const BASE_RETRY_DELAY = 1000;
 
 /** Default Firefox executable locations */
 const firefoxExecutableMap: Partial<Record<NodeJS.Platform, string>> = {
@@ -77,14 +82,9 @@ export const defaultSettings: BuilderOptions = {
   env: [],
 } as const;
 
-export async function buildWebDriver(
+async function prepareWebDriver(
   options: BuilderOptions = defaultSettings,
 ): Promise<Driver | undefined> {
-  Logger.log(
-    "debug",
-    `Building webdriver - headless: ${options.headless}, debug: ${options.debug}`,
-  );
-
   const browserOptions = new Options();
   const capabilities = Capabilities.firefox();
   capabilities.setPageLoadStrategy("normal");
@@ -136,6 +136,46 @@ export async function buildWebDriver(
   // Build driver and return
   const driver = await builder.build();
 
-  Logger.log("debug", "Webdriver built successfully");
   return driver as Driver;
+}
+
+export async function getWebDriver(
+  options: BuilderOptions = defaultSettings,
+): Promise<Driver | undefined> {
+  Logger.log(
+    "debug",
+    `Building webdriver - headless: ${options.headless}, debug: ${options.debug}`,
+  );
+
+  for (let attempt = 1; attempt < MAX_RETRIES + 1; attempt++) {
+    try {
+      const driver = await prepareWebDriver(options);
+
+      Logger.log(
+        "debug",
+        `Webdriver initialized successfully on attempt ${attempt}`,
+      );
+
+      return driver;
+    } catch (error) {
+      const isLastAttempt = attempt > MAX_RETRIES;
+
+      Logger.log(
+        isLastAttempt ? "error" : "warning",
+        `Webdriver initialization failed on attempt ${attempt}/${MAX_RETRIES + 1}`,
+        isLastAttempt ? "" : ". Retrying...",
+        error,
+      );
+
+      if (isLastAttempt) return undefined;
+
+      // Exponential backoff
+      const delay = BASE_RETRY_DELAY * 2 ** (attempt - 1);
+      Logger.log("debug", `Waiting ${delay}ms before retrying`);
+
+      await promisifiedTimeout(delay);
+    }
+  }
+
+  return undefined;
 }
