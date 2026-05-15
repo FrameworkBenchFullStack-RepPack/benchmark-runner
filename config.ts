@@ -16,16 +16,16 @@ const DATABASE_PORT = "5432";
 export const DATABASE_CONFIG: DatabaseConfigType = {
   submoduleName: "database-seed",
   prepare: {
-    command: "docker compose up -d",
-    regex: "Running",
+    command: "docker compose down -v && docker compose up --wait",
+    regex: "Container database-seed-db-1 Healthy",
   },
   start: {
-    command: "docker compose up -d",
-    regex: "Running",
+    command: "docker compose up --wait",
+    regex: "Container database-seed-db-1 Healthy",
   },
   reset: {
-    command: "docker compose up -d",
-    regex: "Running",
+    command: "docker compose down -v && docker compose up --wait",
+    regex: "Container database-seed-db-1 Healthy",
   },
   connectionString: `postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}`,
 };
