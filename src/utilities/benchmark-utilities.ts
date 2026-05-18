@@ -109,7 +109,7 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
 
   await Promise.all(
     Object.entries(outputPaths).map(async ([label, filePath]) => {
-      if (existsSync(filePath)) return;
+      if (!existsSync(filePath)) return;
 
       Logger.log(
         "debug",
