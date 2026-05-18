@@ -16,6 +16,8 @@ const RESULTS_PATH = path.resolve(
   String(Math.round(Date.now() / 1000 / 10)),
 );
 
+const MAX_ATTEMPTS = 5;
+
 /**
  * Function to perform the benchmark on each test-site
  * @param options Profiler options for the firefox profiler
@@ -68,61 +70,73 @@ export default async function startBenchmark(options: InputOptions) {
           `Performing iteration '${iteration}' for test-site '${testSiteName}'`,
         );
 
-        /** Prepare and wait for server */
-        const server = createServerController(
-          options,
-          testSiteName,
-          testSiteConfig,
-        );
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          if (attempt > 1)
+            Logger.log(
+              "warning",
+              `Retrying benchmark '${benchmarkName}' for '${testSiteName}' (attempt ${attempt}/${5})`,
+            );
 
-        await server.waitUntilReady();
+          /** Prepare and wait for server */
+          const server = createServerController(
+            options,
+            testSiteName,
+            testSiteConfig,
+          );
 
-        /** Perform select warmup rounds per benchmark */
-        try {
-          for (
-            let warmupRound = 1;
-            warmupRound <= options.warmupRounds + 1;
-            warmupRound++
-          ) {
-            const benchmarkInput: BenchmarkInput = {
-              framework: testSiteName,
-              iteration,
-              warmupRound,
-              resultsPath: RESULTS_PATH,
-              link: `http://localhost:${options.serverPort}`,
-              profilerOptions: options.profilerOptions,
-              driverOptions: options.driverOptions,
-              setServerResultPath: server.setResultPath,
-              startServerMeasurement: server.startMeasurement,
-              stopServerMeasurement: server.stopMeasurement,
-            };
+          await server.waitUntilReady();
 
+          /** Perform select warmup rounds per benchmark */
+          try {
+            for (
+              let warmupRound = 1;
+              warmupRound <= options.warmupRounds + 1;
+              warmupRound++
+            ) {
+              const benchmarkInput: BenchmarkInput = {
+                framework: testSiteName,
+                iteration,
+                warmupRound,
+                resultsPath: RESULTS_PATH,
+                link: `http://localhost:${options.serverPort}`,
+                profilerOptions: options.profilerOptions,
+                driverOptions: options.driverOptions,
+                setServerResultPath: server.setResultPath,
+                startServerMeasurement: server.startMeasurement,
+                stopServerMeasurement: server.stopMeasurement,
+              };
+
+              Logger.log(
+                "info",
+                `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (iteration ${iteration}/${options.iterations}) (round ${warmupRound}/${options.warmupRounds + 1})`,
+              );
+              await benchmark(benchmarkInput);
+            }
+
+            /** Successful execution - break retry loop */
             Logger.log(
               "info",
-              `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (iteration ${iteration}/${options.iterations})  (round ${warmupRound}/${options.warmupRounds + 1})`,
+              `Finished iteration ${iteration} for ${testSiteName}`,
             );
-            await benchmark(benchmarkInput);
+            break;
+          } catch (error) {
+            if (attempt > MAX_ATTEMPTS) throw error;
+          } finally {
+            // Terminate server
+            await server.terminate();
+            Logger.log("debug", `Terminated ${testSiteName} server`);
+
+            /** Reset database if necessary */
+            if (DATABASE_CONFIG) {
+              Logger.log("debug", `Resetting database`);
+              await createAsyncProcess({
+                command: DATABASE_CONFIG.reset.command,
+                regex: DATABASE_CONFIG.reset.regex,
+                cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
+                stream: Stream.stderr,
+              });
+            }
           }
-
-          Logger.log(
-            "info",
-            `Finished iteration ${iteration} for ${testSiteName}`,
-          );
-        } finally {
-          // Terminate server
-          await server.terminate();
-          Logger.log("debug", `Terminated ${testSiteName} server`);
-        }
-
-        /** Reset database if necessary */
-        if (DATABASE_CONFIG) {
-          Logger.log("debug", `Resetting database`);
-          await createAsyncProcess({
-            command: DATABASE_CONFIG.reset.command,
-            regex: DATABASE_CONFIG.reset.regex,
-            cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
-            stream: Stream.stderr,
-          });
         }
       }
     }
