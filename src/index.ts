@@ -49,7 +49,6 @@ export type InputOptions = {
   profilerOptions: ProfilerOptions;
   driverOptions: BuilderOptions;
   iterations: number;
-  warmupRounds: number;
   chosenBenchmarks: string[];
   chosenFrameworks: TestSiteConfigs;
   benchmarksPath: string;
@@ -67,7 +66,6 @@ const inputOptions: InputOptions = {
   },
   driverOptions: defaultBuilderOptions,
   iterations: 0,
-  warmupRounds: 0,
   chosenBenchmarks: [],
   chosenFrameworks: {},
   benchmarksPath: BENCHMARKS_PATH,
@@ -127,11 +125,6 @@ const program = new Command();
       "--iterations <iterations>",
       `specify the number of test iterations`,
       "1",
-    )
-    .option(
-      "--warmup-rounds <warmup-rounds>",
-      `specify the number of warmup rounds for each test-case`,
-      "0",
     )
     .option(
       "--benchmarks <benchmarks...>",
@@ -280,24 +273,6 @@ const program = new Command();
       );
 
     inputOptions.iterations = iterations;
-  }
-
-  /** Handle warmup-rounds flag */
-  if (options.warmupRounds) {
-    const warmupRounds = Number.parseInt(options.warmupRounds);
-
-    if (Number.isNaN(warmupRounds)) {
-      throw new Error(
-        `"${options.warmupRounds}" is not a valid repetition count - is not an integer`,
-      );
-    }
-
-    if (warmupRounds < 0)
-      throw new Error(
-        `"${options.warmupRounds}" is not a valid repetition count - must be non-negative`,
-      );
-
-    inputOptions.warmupRounds = warmupRounds;
   }
 
   /** Handle benchmarks flag */

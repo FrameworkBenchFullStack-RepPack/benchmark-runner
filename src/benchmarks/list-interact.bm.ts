@@ -9,6 +9,7 @@ import { testList } from "./elements/list";
 import Logger from "../utilities/logging";
 
 const BENCHMARK_NAME = "list-interact" as const;
+export const WARMUP_ROUNDS = 6 as const;
 
 export default async function benchmark(options: BenchmarkInput) {
   Logger.log(

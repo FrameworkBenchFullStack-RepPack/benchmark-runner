@@ -9,6 +9,7 @@ import BenchmarkInput from "./benchmark-types";
 import Logger from "../utilities/logging";
 
 const BENCHMARK_NAME = "static" as const;
+export const WARMUP_ROUNDS = 11 as const;
 
 export default async function benchmark(options: BenchmarkInput) {
   Logger.log(

@@ -63,7 +63,7 @@ export default async function startBenchmark(options: InputOptions) {
       /** Loop through each of the chosen benchmark */
       for (const [
         benchmarkIndex,
-        [benchmarkName, benchmark],
+        [benchmarkName, benchmark, warmupRounds],
       ] of benchmarks.entries()) {
         Logger.log(
           "debug",
@@ -90,7 +90,7 @@ export default async function startBenchmark(options: InputOptions) {
           try {
             for (
               let warmupRound = 1;
-              warmupRound <= options.warmupRounds + 1;
+              warmupRound <= warmupRounds + 1;
               warmupRound++
             ) {
               const benchmarkInput: BenchmarkInput = {
@@ -108,7 +108,7 @@ export default async function startBenchmark(options: InputOptions) {
 
               Logger.log(
                 "info",
-                `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (iteration ${iteration}/${options.iterations}) (round ${warmupRound}/${options.warmupRounds + 1})`,
+                `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (iteration ${iteration}/${options.iterations}) (round ${warmupRound}/${warmupRounds + 1})`,
               );
               await benchmark(benchmarkInput);
             }

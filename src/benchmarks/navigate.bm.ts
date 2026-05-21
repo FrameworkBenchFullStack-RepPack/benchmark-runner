@@ -12,6 +12,7 @@ import BenchmarkInput from "./benchmark-types";
 import Logger from "../utilities/logging";
 
 const BENCHMARK_NAME = "navigate" as const;
+export const WARMUP_ROUNDS = 8 as const;
 
 async function scrollAndNavigate(driver: Driver, hrefSelector: string) {
   Logger.log("debug", `Navigating via footer link to '${hrefSelector}'`);
