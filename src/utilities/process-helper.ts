@@ -25,7 +25,7 @@ export async function createAsyncProcess({
   return new Promise<void>((resolve, reject) => {
     exec(
       command,
-      { cwd, env: { ...env, ...process.env } },
+      { cwd, env: { ...process.env, ...env } },
       (error, stdout, stderr) => {
         if (error) {
           Logger.log(

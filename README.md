@@ -62,8 +62,8 @@ Options:
                                          sandbox, flows, cpuallthreads, samplingallthreads, markersallthreads, unregisteredthreads, processcpu, power, tracing (default: ["power","bandwidth"])
   --threads <threads...>                 specify the logged threads. Available threads: GeckoMain, Compositor, DOM Worker, Renderer, RendererBackend, Timer, StyleThread, Socket Thread, StreamTrans, ImgDecoder, DNS Resolver, TaskController (default:
                                          ["GeckoMain"])
-  --repetitions <repetitions...>         specify the number of test repetitions (default: "1")
-  --benchmarks <benchmarks...>           specify the benchmarks. Available benchmarks: home-interact, list-interact, list, live, navigate, startup, static (default: ["startup","static","live","list","list-interact","home-interact","navigate"])
+  --iterations <iterations...>         specify the number of test repetitions (default: "1")
+  --benchmarks <benchmarks...>           specify the benchmarks. Available benchmarks: home-interact, list-interact, list, live, navigate, static (default: ["static","live","list","list-interact","home-interact","navigate"])
   --test-sites <test-sites...>           specify the test-sites. Available test-sites: test-site-asp-net-htmx, test-site-ruby-rails-hotwire, test-site-ruby-rails-htmx, test-site-astro-htmx, test-site-nextjs, test-site-django-htmx, test-site-spring-boot-htmx
   --process-energy-measurement <path>    path to the process-energy-measurement executable. Enables measuring the server process
   -h, --help                             display help for command

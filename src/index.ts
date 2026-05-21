@@ -129,15 +129,7 @@ const program = new Command();
     .option(
       "--benchmarks <benchmarks...>",
       `specify the benchmarks. Available benchmarks: ${(await getBenchmarkNames(BENCHMARKS_PATH)).join(", ")}`,
-      [
-        "startup",
-        "static",
-        "live",
-        "list",
-        "list-interact",
-        "home-interact",
-        "navigate",
-      ],
+      ["static", "live", "list", "list-interact", "home-interact", "navigate"],
     )
     .option(
       "--test-sites <test-sites...>",

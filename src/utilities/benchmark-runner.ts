@@ -74,7 +74,7 @@ export default async function startBenchmark(options: InputOptions) {
           if (attempt > 1)
             Logger.log(
               "warning",
-              `Retrying benchmark '${benchmarkName}' for '${testSiteName}' (attempt ${attempt}/${5})`,
+              `Retrying benchmark '${benchmarkName}' for '${testSiteName}' (attempt ${attempt}/${MAX_ATTEMPTS})`,
             );
 
           /** Prepare and wait for server */
@@ -120,7 +120,8 @@ export default async function startBenchmark(options: InputOptions) {
             );
             break;
           } catch (error) {
-            if (attempt > MAX_ATTEMPTS) throw error;
+            // Throw error if it threw during the last attempt
+            if (attempt >= MAX_ATTEMPTS) throw error;
           } finally {
             // Terminate server
             await server.terminate();
