@@ -1,5 +1,5 @@
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { Command } from "commander";
 
 import {
@@ -53,6 +53,7 @@ export type InputOptions = {
   chosenFrameworks: TestSiteConfigs;
   benchmarksPath: string;
   processEnergyMeasurementPath: string | undefined;
+  outputPath: string;
 };
 
 const inputOptions: InputOptions = {
@@ -70,6 +71,7 @@ const inputOptions: InputOptions = {
   chosenFrameworks: {},
   benchmarksPath: BENCHMARKS_PATH,
   processEnergyMeasurementPath: undefined,
+  outputPath: "",
 };
 
 const program = new Command();
@@ -97,6 +99,11 @@ const program = new Command();
       "error",
     )
     .option("-d, --debug", "launch browser instances with debugger")
+    .option(
+      "-o, --output-path <output-path>",
+      "sets the path to the output folder",
+      "./profiler-results",
+    )
     .option(
       "--entries <entries>",
       "specify the buffer size used in the profiler",
@@ -146,6 +153,10 @@ const program = new Command();
     .option(
       "--process-energy-measurement <path>",
       `path to the process-energy-measurement executable. Enables measuring the server process`,
+    )
+    .option(
+      "--store-warmup-rounds",
+      `store or discard measurements obtained during warmup rounds`,
     );
 
   // Parse program and extract options
@@ -185,6 +196,18 @@ const program = new Command();
   handleLogLevel(options.logLevelServer, (l) => {
     inputOptions.serverLogLevel = l;
   });
+
+  /** Handle output-path flag */
+  if (options.outputPath) {
+    const outputPath = options.outputPath;
+
+    if (typeof outputPath !== "string")
+      throw new Error(
+        `"${outputPath}" is not a valid output path - is not a string`,
+      );
+
+    inputOptions.outputPath = outputPath;
+  }
 
   /** Handle entries flag */
   if (options.entries) {
