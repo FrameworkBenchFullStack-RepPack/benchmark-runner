@@ -46,8 +46,8 @@ export default async function startBenchmark(options: InputOptions) {
   const testSites = options.chosenFrameworks;
   Logger.log(
     "info",
-    "Testing configured for - ",
-    ...Object.keys(testSites).join(", "),
+    "Testing configured for -",
+    Object.keys(testSites).join(", "),
   );
 
   /** Load benchmarks */
