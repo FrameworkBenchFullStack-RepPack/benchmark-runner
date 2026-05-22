@@ -10,12 +10,6 @@ import { createAsyncProcess, Stream } from "./process-helper";
 import { createServerController } from "./server-worker/create-server-controller";
 import Logger from "./logging";
 
-const RESULTS_ROOT = path.resolve(process.cwd(), "profiler-results");
-const RESULTS_PATH = path.resolve(
-  RESULTS_ROOT,
-  String(Math.round(Date.now() / 1000 / 10)),
-);
-
 const MAX_ATTEMPTS = 5;
 
 /**
@@ -38,8 +32,14 @@ export default async function startBenchmark(options: InputOptions) {
     });
   }
 
+  /** Create output path */
+  const RESULTS_PATH = path.resolve(
+    options.outputPath,
+    String(Math.round(Date.now() / 1000 / 10)),
+  );
+
   /** Make sure the results folder exists */
-  if (!fs.existsSync(RESULTS_ROOT)) fs.mkdirSync(RESULTS_ROOT);
+  if (!fs.existsSync(options.outputPath)) fs.mkdirSync(options.outputPath);
   if (!fs.existsSync(RESULTS_PATH)) fs.mkdirSync(RESULTS_PATH);
 
   /** Determine test-sites to be benchmarked */
