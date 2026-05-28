@@ -16,7 +16,7 @@ export async function runScript(
   ...args: any[]
 ): Promise<string | undefined> {
   try {
-    const result = await driver.executeScript(script, args);
+    const result = await driver.executeScript(script, ...args);
 
     return typeof result === "string" ? result : undefined;
   } catch (error) {
@@ -47,7 +47,7 @@ export async function runScriptInChrome(
 
   try {
     await driver.setContext(Context.CHROME);
-    const result = await runScript(name, driver, script, args);
+    const result = await runScript(name, driver, script, ...args);
     await driver.setContext(prevContext);
     return result;
   } catch (error) {
@@ -75,7 +75,7 @@ export async function runScriptAsync(
   ...args: any[]
 ): Promise<string | undefined> {
   try {
-    const result = await driver.executeAsyncScript(script, args);
+    const result = await driver.executeAsyncScript(script, ...args);
 
     return typeof result === "string" ? result : undefined;
   } catch (error) {

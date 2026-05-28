@@ -147,7 +147,7 @@ export async function getWebDriver(
     `Building webdriver - headless: ${options.headless}, debug: ${options.debug}`,
   );
 
-  for (let attempt = 1; attempt < MAX_RETRIES + 1; attempt++) {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const driver = await prepareWebDriver(options);
 
@@ -158,11 +158,11 @@ export async function getWebDriver(
 
       return driver;
     } catch (error) {
-      const isLastAttempt = attempt > MAX_RETRIES;
+      const isLastAttempt = attempt >= MAX_RETRIES;
 
       Logger.log(
         isLastAttempt ? "error" : "warning",
-        `Webdriver initialization failed on attempt ${attempt}/${MAX_RETRIES + 1}`,
+        `Webdriver initialization failed on attempt ${attempt}/${MAX_RETRIES}`,
         isLastAttempt ? "" : ". Retrying...",
         error,
       );

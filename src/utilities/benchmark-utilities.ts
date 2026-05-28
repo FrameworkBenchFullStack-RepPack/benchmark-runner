@@ -1,3 +1,6 @@
+import path from "node:path";
+import { existsSync } from "node:fs";
+import { rm } from "node:fs/promises";
 import { By, until, WebElement } from "selenium-webdriver";
 import { Driver } from "selenium-webdriver/firefox";
 import {
@@ -17,8 +20,11 @@ interface ProfilerWrapperOptions {
   /** Framework to be tested */
   framework: string;
 
-  /** Current repetition */
-  repetition: number;
+  /** Current benchmark iteration */
+  iteration: number;
+
+  /** Current test-case round */
+  warmupRound: number;
 
   /** Results path */
   resultsPath: string;
@@ -76,7 +82,7 @@ interface ProfilerWrapperOptions {
 export async function profilerWrapper(input: ProfilerWrapperOptions) {
   Logger.log(
     "debug",
-    `Starting profilerWrapper for benchmark '${input.benchmarkName}' on framework '${input.framework}' (repetition ${input.repetition})`,
+    `Starting profilerWrapper for benchmark '${input.benchmarkName}' on framework '${input.framework}' (repetition ${input.iteration})`,
   );
 
   const driver = await getWebDriver(input.driverOptions);
@@ -86,15 +92,37 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
     throw new Error("Failed to initialize Driver");
   }
 
-  const geckoOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}_client.json`;
-  const serverOutputPath = `${input.resultsPath}/${input.benchmarkName}_${input.framework}_${input.repetition}_server.csv`;
+  const outputBaseName = [
+    input.benchmarkName,
+    input.framework,
+    input.iteration,
+    input.warmupRound,
+  ].join("_");
 
-  Logger.log("debug", `Client profiler output path: ${geckoOutputPath}`);
-  Logger.log("debug", `Server measurement output path: ${serverOutputPath}`);
+  const outputPaths = {
+    client: path.join(input.resultsPath, `${outputBaseName}_client.json`),
+    server: path.join(input.resultsPath, `${outputBaseName}_server.csv`),
+  };
+
+  Logger.log("debug", `Client profiler output path: ${outputPaths.client}`);
+  Logger.log("debug", `Server measurement output path: ${outputPaths.server}`);
+
+  await Promise.all(
+    Object.entries(outputPaths).map(async ([label, filePath]) => {
+      if (!existsSync(filePath)) return;
+
+      Logger.log(
+        "debug",
+        `Removing existing ${label} output file: ${filePath}`,
+      );
+
+      await rm(filePath);
+    }),
+  );
 
   try {
     // Before benchmark / set server measurement output path
-    input.setServerResultPath(serverOutputPath);
+    input.setServerResultPath(outputPaths.server);
     if (input.beforeBM) {
       Logger.log("debug", "Running beforeBM hook");
       await input.beforeBM(driver);
@@ -113,7 +141,7 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
     // Stop profiler and server and store data
     Logger.log("debug", "Stopping server measurement and profiler");
     input.stopServerMeasurement();
-    await profilerHandler.end(geckoOutputPath);
+    await profilerHandler.end(outputPaths.client);
 
     // Clean up after the test
     if (input.afterBM) {

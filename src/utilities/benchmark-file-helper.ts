@@ -60,7 +60,7 @@ async function loadAndMapFiles<T>(
 export async function loadBenchmarks(
   dir: string,
   benchmarks: string[],
-): Promise<[string, Function][]> {
+): Promise<[string, Function, number][]> {
   // Create filter function if necessary
   const filterFunction = (bmName: string) =>
     benchmarks.includes(removeBenchmarkExtension(bmName));
@@ -68,16 +68,26 @@ export async function loadBenchmarks(
   // Import filtered benchmarks and make sure they export a default function
   const importedBenchmarks = await loadAndMapFiles(
     dir,
-    ([path, importedFile]) => [
-      removeBenchmarkExtension(path),
-      importedFile.default ?? null,
-    ],
+    ([path, importedFile]) => {
+      if (!importedFile.WARMUP_ROUNDS)
+        Logger.log(
+          "warning",
+          `Imported benchmark '${removeBenchmarkExtension(path)}', does not export a variable 'WARMUP_ROUNDS' - defaulting to 0.`,
+        );
+
+      return [
+        removeBenchmarkExtension(path),
+        importedFile.default ?? null,
+        importedFile.WARMUP_ROUNDS ?? 0,
+      ];
+    },
     filterFunction,
   );
 
   // Get the functions
   const functions = importedBenchmarks.filter(
-    (bm): bm is [string, Function] => typeof bm[1] === "function",
+    (bm): bm is [string, Function, number] =>
+      typeof bm[1] === "function" && typeof bm[2] === "number",
   );
 
   if (functions.length !== benchmarks.length) {

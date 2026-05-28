@@ -10,6 +10,8 @@ import { createAsyncProcess, Stream } from "./process-helper";
 import { createServerController } from "./server-worker/create-server-controller";
 import Logger from "./logging";
 
+const MAX_ATTEMPTS = 5;
+
 /**
  * Function to perform the benchmark on each test-site
  * @param options Profiler options for the firefox profiler
@@ -44,76 +46,100 @@ export default async function startBenchmark(options: InputOptions) {
   const testSites = options.chosenFrameworks;
   Logger.log(
     "info",
-    "Testing configured for - ",
-    ...Object.keys(testSites).join(", "),
+    "Testing configured for -",
+    Object.keys(testSites).join(", "),
   );
 
-  /** Loop through every repetitions */
-  for (let repetition = 1; repetition <= options.repetitions; repetition++) {
+  /** Load benchmarks */
+  const benchmarks = await loadBenchmarks(
+    options.benchmarksPath,
+    options.chosenBenchmarks,
+  );
+
+  /** Loop through every iterations */
+  for (let iteration = 1; iteration <= options.iterations; iteration++) {
     /** Loop through every test-site and perform the benchmark */
     for (const [testSiteName, testSiteConfig] of Object.entries(testSites)) {
-      Logger.log(
-        "debug",
-        `Performing iteration '${repetition}' on test-site '${testSiteName}'`,
-      );
-
-      const server = createServerController(
-        options,
-        testSiteName,
-        testSiteConfig,
-      );
-
-      await server.waitUntilReady();
-
-      const benchmarkInput: BenchmarkInput = {
-        framework: testSiteName,
-        repetition,
-        resultsPath: RESULTS_PATH,
-        link: `http://localhost:${options.serverPort}`,
-        profilerOptions: options.profilerOptions,
-        driverOptions: options.driverOptions,
-        setServerResultPath: server.setResultPath,
-        startServerMeasurement: server.startMeasurement,
-        stopServerMeasurement: server.stopMeasurement,
-      };
-
-      try {
-        // Perform select benchmark
-        const benchmarks = await loadBenchmarks(
-          options.benchmarksPath,
-          options.chosenBenchmarks,
-        );
-        for (const [
-          benchmarkIndex,
-          [benchmarkName, benchmark],
-        ] of benchmarks.entries()) {
-          Logger.log(
-            "info",
-            `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (repetition ${repetition}/${options.repetitions})`,
-          );
-          await benchmark(benchmarkInput);
-        }
-
+      /** Loop through each of the chosen benchmark */
+      for (const [
+        benchmarkIndex,
+        [benchmarkName, benchmark, warmupRounds],
+      ] of benchmarks.entries()) {
         Logger.log(
-          "info",
-          `Finished iteration ${repetition} for ${testSiteName}`,
+          "debug",
+          `Performing iteration '${iteration}' for test-site '${testSiteName}'`,
         );
-      } finally {
-        // Terminate server
-        await server.terminate();
-        Logger.log("debug", `Terminated ${testSiteName} server`);
-      }
-    }
 
-    /** Reset database if necessary */
-    if (DATABASE_CONFIG) {
-      Logger.log("debug", `Resetting database`);
-      await createAsyncProcess({
-        command: DATABASE_CONFIG.reset.command,
-        regex: DATABASE_CONFIG.reset.regex,
-        cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
-        stream: Stream.stderr,
-      });
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          if (attempt > 1)
+            Logger.log(
+              "warning",
+              `Retrying benchmark '${benchmarkName}' for '${testSiteName}' (attempt ${attempt}/${MAX_ATTEMPTS})`,
+            );
+
+          /** Prepare and wait for server */
+          const server = createServerController(
+            options,
+            testSiteName,
+            testSiteConfig,
+          );
+
+          await server.waitUntilReady();
+
+          /** Perform select warmup rounds per benchmark */
+          try {
+            for (
+              let warmupRound = 1;
+              warmupRound <= warmupRounds + 1;
+              warmupRound++
+            ) {
+              const benchmarkInput: BenchmarkInput = {
+                framework: testSiteName,
+                iteration,
+                warmupRound,
+                resultsPath: RESULTS_PATH,
+                link: `http://localhost:${options.serverPort}`,
+                profilerOptions: options.profilerOptions,
+                driverOptions: options.driverOptions,
+                setServerResultPath: server.setResultPath,
+                startServerMeasurement: server.startMeasurement,
+                stopServerMeasurement: server.stopMeasurement,
+              };
+
+              Logger.log(
+                "info",
+                `Benchmarking ${testSiteName} with ${benchmarkName}.. (benchmark ${benchmarkIndex + 1}/${benchmarks.length}) (iteration ${iteration}/${options.iterations}) (round ${warmupRound}/${warmupRounds + 1})`,
+              );
+              await benchmark(benchmarkInput);
+            }
+
+            /** Successful execution - break retry loop */
+            Logger.log(
+              "info",
+              `Finished iteration ${iteration} for ${testSiteName}`,
+            );
+            break;
+          } catch (error) {
+            // Throw error if it threw during the last attempt
+            if (attempt >= MAX_ATTEMPTS) throw error;
+          } finally {
+            // Terminate server
+            await server.terminate();
+            Logger.log("debug", `Terminated ${testSiteName} server`);
+
+            /** Reset database if necessary */
+            if (DATABASE_CONFIG) {
+              Logger.log("debug", `Resetting database`);
+              await createAsyncProcess({
+                command: DATABASE_CONFIG.reset.command,
+                regex: DATABASE_CONFIG.reset.regex,
+                cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
+                stream: Stream.stderr,
+              });
+            }
+          }
+        }
+      }
     }
   }
 }
