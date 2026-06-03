@@ -56,10 +56,10 @@ export default async function startBenchmark(options: InputOptions) {
     options.chosenBenchmarks,
   );
 
-  /** Loop through every iterations */
-  for (let iteration = 1; iteration <= options.iterations; iteration++) {
-    /** Loop through every test-site and perform the benchmark */
-    for (const [testSiteName, testSiteConfig] of Object.entries(testSites)) {
+  /** Loop through every test-site and perform the benchmark */
+  for (const [testSiteName, testSiteConfig] of Object.entries(testSites)) {
+    /** Loop through every iterations */
+    for (let iteration = 1; iteration <= options.iterations; iteration++) {
       /** Loop through each of the chosen benchmark */
       for (const [
         benchmarkIndex,
