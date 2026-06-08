@@ -4,13 +4,35 @@ import path from "node:path";
 import { SUBMODULES_PATH, DATABASE_CONFIG } from "../../config";
 import type { InputOptions } from "../index";
 import type BenchmarkInput from "../benchmarks/benchmark-types";
+import type {
+  Command,
+  TestSiteConfig,
+  TestSiteConfigs,
+} from "../types/test-sites";
 
 import { loadBenchmarks } from "./benchmark-file-helper";
-import { createAsyncProcess, Stream } from "./process-helper";
-import { createServerController } from "./server-worker/create-server-controller";
+import { createAsyncProcess } from "./process-helper";
+import {
+  createProcessController,
+  ProcessController,
+} from "./server-worker/create-process-controller";
 import Logger from "./logging";
+import { performDatabaseAction } from "./database-utilities";
 
 const MAX_ATTEMPTS = 5;
+
+/**
+ * Function to rotate frameworks using a rotated round-robin approach
+ * @param frameworks Frameworks to rotate
+ * @returns A rotated list of frameworks
+ */
+function getRotatedTestSites(
+  frameworks: [string, TestSiteConfig<Command>][],
+): [string, TestSiteConfig<Command>][] {
+  const [first, ...rest] = frameworks;
+  if (first === undefined) throw new Error("First test site is undefined");
+  return [...rest, first];
+}
 
 /**
  * Function to perform the benchmark on each test-site
@@ -20,17 +42,6 @@ const MAX_ATTEMPTS = 5;
 export default async function startBenchmark(options: InputOptions) {
   if (options.processEnergyMeasurementPath)
     Logger.log("info", "Server process energy measurement enabled");
-
-  /** Start database if necessary */
-  if (DATABASE_CONFIG) {
-    Logger.log("info", "Starting database");
-    await createAsyncProcess({
-      command: DATABASE_CONFIG.start.command,
-      regex: DATABASE_CONFIG.start.regex,
-      cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
-      stream: Stream.stderr,
-    });
-  }
 
   /** Create output path */
   const RESULTS_PATH = path.resolve(
@@ -43,11 +54,11 @@ export default async function startBenchmark(options: InputOptions) {
   if (!fs.existsSync(RESULTS_PATH)) fs.mkdirSync(RESULTS_PATH);
 
   /** Determine test-sites to be benchmarked */
-  const testSites = options.chosenFrameworks;
+  let testSites = Object.entries(options.chosenFrameworks);
   Logger.log(
     "info",
     "Testing configured for -",
-    Object.keys(testSites).join(", "),
+    testSites.map(([name, _]) => name).join(", "),
   );
 
   /** Load benchmarks */
@@ -59,7 +70,7 @@ export default async function startBenchmark(options: InputOptions) {
   /** Loop through every iterations */
   for (let iteration = 1; iteration <= options.iterations; iteration++) {
     /** Loop through every test-site and perform the benchmark */
-    for (const [testSiteName, testSiteConfig] of Object.entries(testSites)) {
+    for (const [testSiteName, testSiteConfig] of testSites) {
       /** Loop through each of the chosen benchmark */
       for (const [
         benchmarkIndex,
@@ -77,17 +88,63 @@ export default async function startBenchmark(options: InputOptions) {
               `Retrying benchmark '${benchmarkName}' for '${testSiteName}' (attempt ${attempt}/${MAX_ATTEMPTS})`,
             );
 
-          /** Prepare and wait for server */
-          const server = createServerController(
-            options,
-            testSiteName,
-            testSiteConfig,
-          );
+          /** Start database if necessary */
+          let databaseController: ProcessController | undefined = undefined;
+          let serverController: ProcessController | undefined = undefined;
 
-          await server.waitUntilReady();
-
-          /** Perform select warmup rounds per benchmark */
           try {
+            if (DATABASE_CONFIG) {
+              if (DATABASE_CONFIG.start.regex === undefined)
+                throw new Error("Start detection regex required");
+
+              // Prepare the database
+              await performDatabaseAction({
+                config: DATABASE_CONFIG,
+                action: DATABASE_CONFIG.prepare,
+                subModulePath: SUBMODULES_PATH,
+                processLogLevel: options.processLogLevel,
+              });
+
+              databaseController = createProcessController({
+                processLogLevel: options.processLogLevel,
+                port: DATABASE_CONFIG.port,
+                submoduleName: DATABASE_CONFIG.submoduleName,
+                config: {
+                  start: DATABASE_CONFIG.start.command,
+                  startDetectionRegex: DATABASE_CONFIG.start.regex,
+                  portIdentifier: "unused",
+                },
+                ...(options.processEnergyMeasurementPath && {
+                  measuringOptions: {
+                    processEnergyMeasurementPath:
+                      options.processEnergyMeasurementPath,
+                    measuringInterval: options.profilerOptions.interval,
+                  },
+                }),
+              });
+
+              await databaseController.waitUntilReady();
+            }
+
+            /** Prepare and wait for server */
+            serverController = createProcessController({
+              processLogLevel: options.processLogLevel,
+              port: options.port,
+              submoduleName: testSiteName,
+              config: testSiteConfig,
+              ...(options.processEnergyMeasurementPath && {
+                measuringOptions: {
+                  processEnergyMeasurementPath:
+                    options.processEnergyMeasurementPath,
+                  measuringInterval: options.profilerOptions.interval,
+                },
+              }),
+            });
+
+            await serverController.waitUntilReady();
+
+            /** Perform select warmup rounds per benchmark */
+
             for (
               let warmupRound = 1;
               warmupRound <= warmupRounds + 1;
@@ -98,12 +155,21 @@ export default async function startBenchmark(options: InputOptions) {
                 iteration,
                 warmupRound,
                 resultsPath: RESULTS_PATH,
-                link: `http://localhost:${options.serverPort}`,
+                link: `http://localhost:${options.port}`,
                 profilerOptions: options.profilerOptions,
                 driverOptions: options.driverOptions,
-                setServerResultPath: server.setResultPath,
-                startServerMeasurement: server.startMeasurement,
-                stopServerMeasurement: server.stopMeasurement,
+                setResultPath: {
+                  server: serverController.setResultPath,
+                  database: databaseController?.setResultPath,
+                },
+                startMeasurement: {
+                  server: serverController.startMeasurement,
+                  database: databaseController?.startMeasurement,
+                },
+                stopMeasurement: {
+                  server: serverController.stopMeasurement,
+                  database: databaseController?.stopMeasurement,
+                },
               };
 
               Logger.log(
@@ -124,22 +190,34 @@ export default async function startBenchmark(options: InputOptions) {
             if (attempt >= MAX_ATTEMPTS) throw error;
           } finally {
             // Terminate server
-            await server.terminate();
-            Logger.log("debug", `Terminated ${testSiteName} server`);
+            if (serverController) {
+              await serverController.terminate();
+              Logger.log("debug", `Terminated ${testSiteName} server`);
+            }
+
+            // Terminate database
+            if (databaseController) {
+              await databaseController.terminate();
+              Logger.log("debug", `Terminated database`);
+            }
 
             /** Reset database if necessary */
             if (DATABASE_CONFIG) {
               Logger.log("debug", `Resetting database`);
-              await createAsyncProcess({
-                command: DATABASE_CONFIG.reset.command,
-                regex: DATABASE_CONFIG.reset.regex,
-                cwd: `${SUBMODULES_PATH}/${DATABASE_CONFIG.submoduleName}`,
-                stream: Stream.stderr,
+              // Prepare the database
+              await performDatabaseAction({
+                config: DATABASE_CONFIG,
+                action: DATABASE_CONFIG.reset,
+                subModulePath: SUBMODULES_PATH,
+                processLogLevel: options.processLogLevel,
               });
             }
           }
         }
       }
     }
+
+    /** Rotate frameworks for next round */
+    testSites = getRotatedTestSites(testSites);
   }
 }

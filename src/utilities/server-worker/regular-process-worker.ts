@@ -13,10 +13,10 @@ import Logger from "../logging.ts";
 
   Logger.log(
     "debug",
-    `Spawning server process: '${workerConfig.serverCommand}' (cwd: ${workerConfig.cwd})`,
+    `Spawning server process: '${workerConfig.processCommand}' (cwd: ${workerConfig.cwd})`,
   );
 
-  const serverProcess = spawn(workerConfig.serverCommand, {
+  const serverProcess = spawn(workerConfig.processCommand, {
     cwd: workerConfig.cwd,
     shell: true,
     detached: true,

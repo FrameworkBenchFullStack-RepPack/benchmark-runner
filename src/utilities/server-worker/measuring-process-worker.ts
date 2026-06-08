@@ -15,13 +15,13 @@ import Logger from "../logging.ts";
 
   Logger.log(
     "debug",
-    `Spawning process-measuring-tool: '${workerConfig.processMeasurementExecutable}' wrapping '${workerConfig.serverCommand}' (cwd: ${workerConfig.cwd})`,
+    `Spawning process-measuring-tool: '${workerConfig.processMeasurementExecutable}' wrapping '${workerConfig.processCommand}' (cwd: ${workerConfig.cwd})`,
   );
 
   const serverProcess = spawn(
     workerConfig.processMeasurementExecutable,
     [
-      `--command=${workerConfig.serverCommand}`,
+      `--command=${workerConfig.processCommand}`,
       `--start-regex=${workerConfig.startDetectionRegex.regex}`,
       `--regex-output-channel=${workerConfig.startDetectionRegex.channel}`,
       `--interval=${workerConfig.measurementInterval}`,

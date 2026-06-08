@@ -60,19 +60,28 @@ interface ProfilerWrapperOptions {
    * Callback function to set result output path in measuring tool
    * @returns void
    */
-  setServerResultPath: (path: string) => void;
+  setResultPath: {
+    server: (path: string) => void;
+    database?: (path: string) => void;
+  };
 
   /**
    * Callback function to start energy measurement of the backend server
    * @returns void
    */
-  startServerMeasurement: () => void;
+  startMeasurement: {
+    server: () => void;
+    database?: () => void;
+  };
 
   /**
    * Callback function to stop energy measurement of the backend server
    * @returns void
    */
-  stopServerMeasurement: () => void;
+  stopMeasurement: {
+    server: () => void;
+    database?: () => void;
+  };
 }
 
 /**
@@ -102,10 +111,15 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
   const outputPaths = {
     client: path.join(input.resultsPath, `${outputBaseName}_client.json`),
     server: path.join(input.resultsPath, `${outputBaseName}_server.csv`),
+    database: path.join(input.resultsPath, `${outputBaseName}_database.csv`),
   };
 
   Logger.log("debug", `Client profiler output path: ${outputPaths.client}`);
   Logger.log("debug", `Server measurement output path: ${outputPaths.server}`);
+  Logger.log(
+    "debug",
+    `Database measurement output path: ${outputPaths.database}`,
+  );
 
   await Promise.all(
     Object.entries(outputPaths).map(async ([label, filePath]) => {
@@ -122,7 +136,8 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
 
   try {
     // Before benchmark / set server measurement output path
-    input.setServerResultPath(outputPaths.server);
+    input.setResultPath.server(outputPaths.server);
+    input.setResultPath.database?.(outputPaths.database);
     if (input.beforeBM) {
       Logger.log("debug", "Running beforeBM hook");
       await input.beforeBM(driver);
@@ -131,7 +146,8 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
     // Configure and start profiler and server measurements
     const profilerHandler = new ProfilerHandler(driver);
     Logger.log("debug", "Starting server measurement and profiler");
-    input.startServerMeasurement();
+    input.startMeasurement.server();
+    input.startMeasurement.database?.();
     await profilerHandler.start(input.profilerOptions);
 
     // Run benchmark
@@ -140,7 +156,8 @@ export async function profilerWrapper(input: ProfilerWrapperOptions) {
 
     // Stop profiler and server and store data
     Logger.log("debug", "Stopping server measurement and profiler");
-    input.stopServerMeasurement();
+    input.stopMeasurement.server();
+    input.stopMeasurement.database?.();
     await profilerHandler.end(outputPaths.client);
 
     // Clean up after the test

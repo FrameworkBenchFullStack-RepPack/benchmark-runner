@@ -25,16 +25,15 @@ export type MessageStructures = {
 
 export type BaseWorkerData = {
   logLevel: LogLevel;
-  measurementInterval: number;
-  serverCommand: string;
+  processCommand: string;
   startDetectionRegex: StartDetectionRegex;
-  serverPort: number;
   cwd: string;
   env: Record<string, string>;
 };
 
 export type MeasuringWorkerData = BaseWorkerData & {
   processMeasurementExecutable: string;
+  measurementInterval: number;
 };
 
 /**

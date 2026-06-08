@@ -12,19 +12,19 @@ import {
   MessageType,
   type MessageStructures,
 } from "./worker-types";
-import Logger from "../logging";
+import Logger, { LogLevel } from "../logging";
 
-const NON_MEASURING_SERVER_WORKER_PATH = path.resolve(
+const NON_MEASURING_PROCESS_WORKER_PATH = path.resolve(
   import.meta.dirname,
-  "./regular-server-worker.ts",
+  "./regular-process-worker.ts",
 );
 
-const MEASURING_SERVER_WORKER_PATH = path.resolve(
+const MEASURING_PROCESS_WORKER_PATH = path.resolve(
   import.meta.dirname,
-  "./measuring-server-worker.ts",
+  "./measuring-process-worker.ts",
 );
 
-type ServerController = {
+export type ProcessController = {
   setResultPath(path: string): void;
   startMeasurement(): void;
   stopMeasurement(): void;
@@ -32,40 +32,48 @@ type ServerController = {
   terminate(): Promise<void>;
 };
 
-export function createServerController(
-  options: InputOptions,
-  testSiteName: string,
-  testSiteConfig: TestSiteConfig,
-): ServerController {
-  Logger.log("debug", `Creating server controller for ${testSiteName}`);
+export function createProcessController(options: {
+  processLogLevel: LogLevel;
+  port: number;
+  measuringOptions?: {
+    processEnergyMeasurementPath: string;
+    measuringInterval: number;
+  };
+  submoduleName: string;
+  config: TestSiteConfig;
+}): ProcessController {
+  Logger.log(
+    "debug",
+    `Creating process controller for ${options.submoduleName}`,
+  );
 
-  const isMeasuringServer = options.processEnergyMeasurementPath !== undefined;
-  Logger.log("debug", `Using process-measuring-tool: ${isMeasuringServer}`);
+  const isMeasuringProcess = options.measuringOptions !== undefined;
+  Logger.log("debug", `Using process-measuring-tool: ${isMeasuringProcess}`);
 
-  const workerPath = isMeasuringServer
-    ? MEASURING_SERVER_WORKER_PATH
-    : NON_MEASURING_SERVER_WORKER_PATH;
+  const workerPath = isMeasuringProcess
+    ? MEASURING_PROCESS_WORKER_PATH
+    : NON_MEASURING_PROCESS_WORKER_PATH;
 
   // Prepare path related config
-  const submodulePath = path.join(SUBMODULES_PATH, testSiteName);
-  const cwd = testSiteConfig.start.workingPath(submodulePath);
+  const submodulePath = path.join(SUBMODULES_PATH, options.submoduleName);
+  const cwd = options.config.start.workingPath(submodulePath);
 
   // Prepare environment variables
   const env = {
-    [testSiteConfig.portIdentifier]: options.serverPort.toString(),
-    ...(testSiteConfig.start.env(submodulePath) ?? {}),
+    [options.config.portIdentifier]: options.port.toString(),
+    ...(options.config.start.env(submodulePath) ?? {}),
   };
 
   const workerData: BaseWorkerData | MeasuringWorkerData = {
-    logLevel: options.serverLogLevel,
-    measurementInterval: options.profilerOptions.interval,
-    serverCommand: testSiteConfig.start.command,
-    startDetectionRegex: testSiteConfig.startDetectionRegex,
-    serverPort: options.serverPort,
+    logLevel: options.processLogLevel,
+    processCommand: options.config.start.command,
+    startDetectionRegex: options.config.startDetectionRegex,
     env,
     cwd,
-    ...(isMeasuringServer && {
-      processMeasurementExecutable: options.processEnergyMeasurementPath,
+    ...(isMeasuringProcess && {
+      processMeasurementExecutable:
+        options.measuringOptions?.processEnergyMeasurementPath,
+      measurementInterval: options.measuringOptions?.measuringInterval,
     }),
   };
 
@@ -78,7 +86,7 @@ export function createServerController(
     worker.postMessage(message);
   };
 
-  const setResultPath = isMeasuringServer
+  const setResultPath = isMeasuringProcess
     ? (path: string) =>
         post({
           type: MessageType.SetOutputPath,
@@ -88,11 +96,11 @@ export function createServerController(
         })
     : () => {};
 
-  const startMeasurement = isMeasuringServer
+  const startMeasurement = isMeasuringProcess
     ? () => post({ type: MessageType.Start })
     : () => {};
 
-  const stopMeasurement = isMeasuringServer
+  const stopMeasurement = isMeasuringProcess
     ? () => post({ type: MessageType.Stop })
     : () => {};
 
@@ -102,7 +110,7 @@ export function createServerController(
     };
 
     const onExit = (code: number) => {
-      throw new Error(`Server worker exited before ready with code ${code}`);
+      throw new Error(`Process worker exited before ready with code ${code}`);
     };
 
     // Add event listeners for errors and unexpected exists
@@ -110,10 +118,10 @@ export function createServerController(
     worker.once("exit", onExit);
 
     try {
-      Logger.log("debug", "Waiting for server ready message");
+      Logger.log("debug", "Waiting for process ready message");
       while (true) {
         const [message] = await once(worker, "message");
-        Logger.log("debug", "Got ready message from server: ", message);
+        Logger.log("debug", "Got ready message from process: ", message);
 
         if (message?.type === MessageType.Ready) {
           break;

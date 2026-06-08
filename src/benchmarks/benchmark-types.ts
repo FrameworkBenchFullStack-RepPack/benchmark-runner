@@ -9,9 +9,18 @@ type BenchmarkInput = {
   link: string;
   profilerOptions: ProfilerOptions;
   driverOptions?: BuilderOptions;
-  setServerResultPath: (path: string) => void;
-  startServerMeasurement: () => void;
-  stopServerMeasurement: () => void;
+  setResultPath: {
+    server: (path: string) => void;
+    database?: (path: string) => void;
+  };
+  startMeasurement: {
+    server: () => void;
+    database?: () => void;
+  };
+  stopMeasurement: {
+    server: () => void;
+    database?: () => void;
+  };
 };
 
 export default BenchmarkInput;
