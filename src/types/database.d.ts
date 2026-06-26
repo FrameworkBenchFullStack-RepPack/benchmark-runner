@@ -1,14 +1,21 @@
-type ConfigStep = {
-  command: string;
-  regex: string;
+/**
+ * Database Types
+ */
+
+import { Command, StartDetectionRegex } from "./test-sites";
+
+type DatabaseCommand = {
+  command: Command;
+  regex?: StartDetectionRegex;
 };
 
-export type DatabaseConfigType =
-  | {
-      submoduleName: string;
-      prepare: ConfigStep;
-      start: ConfigStep;
-      reset: ConfigStep;
-      connectionString: string;
-    }
-  | undefined;
+type DatabaseAction = Set<DatabaseCommand | "start-db">;
+
+export type DatabaseConfigType = {
+  submoduleName: string;
+  start: DatabaseCommand;
+  prepare: DatabaseAction;
+  reset: DatabaseAction;
+  port: number;
+  connectionString: string;
+};

@@ -23,8 +23,7 @@ import {
   BuilderOptions,
   defaultSettings as defaultBuilderOptions,
 } from "./utilities/browser-utilities/driver-builder";
-import { createAsyncProcess, Stream } from "./utilities/process-helper";
-import { ConfigStep } from "./types/database";
+import { createAsyncProcess } from "./utilities/process-helper";
 import Logger, { isLogLevel, type LogLevel } from "./utilities/logging";
 
 const BENCHMARKS_PATH = path.resolve(import.meta.dirname, "./benchmarks/");
@@ -44,8 +43,8 @@ for (const [name, siteConfig] of Object.entries(config.TEST_SITE_CONFIG)) {
 }
 
 export type InputOptions = {
-  serverLogLevel: LogLevel;
-  serverPort: number;
+  processLogLevel: LogLevel;
+  port: number;
   profilerOptions: ProfilerOptions;
   driverOptions: BuilderOptions;
   iterations: number;
@@ -57,8 +56,8 @@ export type InputOptions = {
 };
 
 const inputOptions: InputOptions = {
-  serverLogLevel: "error",
-  serverPort: 0,
+  processLogLevel: "error",
+  port: 0,
   profilerOptions: {
     entries: 0,
     interval: 0,
@@ -165,7 +164,7 @@ const program = new Command();
     if (port < 0 || port > 65535)
       throw new Error(`The port must be within 0-65535`);
 
-    inputOptions.serverPort = port;
+    inputOptions.port = port;
   }
 
   /** Handle debug flag */
@@ -186,7 +185,7 @@ const program = new Command();
     Logger.level = l;
   });
   handleLogLevel(options.logLevelServer, (l) => {
-    inputOptions.serverLogLevel = l;
+    inputOptions.processLogLevel = l;
   });
 
   /** Handle output-path flag */
@@ -350,24 +349,6 @@ const program = new Command();
   }
 
   Logger.log("info", "Successfully parsed input parameters");
-
-  // Run db prepare and start script
-  if (config.DATABASE_CONFIG) {
-    const dbSteps: [string, ConfigStep][] = [
-      ["Preparing database", config.DATABASE_CONFIG.prepare],
-      ["Starting database", config.DATABASE_CONFIG.start],
-    ];
-
-    for (const [step, configStep] of dbSteps) {
-      Logger.log("debug", "Database preparation step - ", step);
-      await createAsyncProcess({
-        command: configStep.command,
-        cwd: `${config.SUBMODULES_PATH}/${config.DATABASE_CONFIG.submoduleName}`,
-        regex: configStep.regex,
-        stream: Stream.stderr,
-      });
-    }
-  }
 
   // Run test-site prepare script
   Logger.log("info", "Preparing test-sites");

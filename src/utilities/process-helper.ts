@@ -1,23 +1,19 @@
 import { exec } from "child_process";
 
 import Logger from "./logging";
-
-export enum Stream {
-  stderr,
-  stdout,
-}
+import { OutputChannel } from "../types/test-sites";
 
 export async function createAsyncProcess({
   command,
   cwd,
   regex,
-  stream = Stream.stdout,
+  stream = "stdout",
   env,
 }: {
   command: string;
   cwd: string;
   regex?: string;
-  stream?: Stream;
+  stream?: OutputChannel;
   env?: { [key: string]: string };
 }) {
   Logger.log("debug", `Executing command: '${command}' (cwd: ${cwd})`);
@@ -37,11 +33,11 @@ export async function createAsyncProcess({
 
         if (
           regex &&
-          !new RegExp(regex).test(stream === Stream.stdout ? stdout : stderr)
+          !new RegExp(regex).test(stream === "stdout" ? stdout : stderr)
         ) {
           Logger.log(
             "error",
-            `Regex '${regex}' did not match ${stream === Stream.stdout ? "stdout" : "stderr"} for command: '${command}'`,
+            `Regex '${regex}' did not match ${stream === "stdout" ? "stdout" : "stderr"} for command: '${command}'`,
           );
           return reject("Regex did not match stdout");
         }

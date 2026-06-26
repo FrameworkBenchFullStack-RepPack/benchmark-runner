@@ -1,5 +1,6 @@
 import path from "node:path";
 import {
+  Command,
   type CommandConfig,
   type TestSiteConfigs,
 } from "./src/types/test-sites";
@@ -11,23 +12,51 @@ const DATABASE_NAME = "benchmark";
 const DATABASE_USER = "benchmark";
 const DATABASE_PASSWORD = "benchmark";
 const DATABASE_HOST = "localhost";
-const DATABASE_PORT = "5432";
+const DATABASE_PORT = 5432;
+
+const dbConnectionString = `postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}`;
 
 export const DATABASE_CONFIG: DatabaseConfigType = {
-  submoduleName: "database-seed",
-  prepare: {
-    command: "docker compose down -v && docker compose up --wait",
-    regex: "Container database-seed-db-1 Healthy",
-  },
+  submoduleName: "database",
+  connectionString: dbConnectionString,
+  port: DATABASE_PORT,
   start: {
-    command: "docker compose up --wait",
-    regex: "Container database-seed-db-1 Healthy",
+    command: new Command({
+      command: `postgres -D ./pgdata -p ${DATABASE_PORT}`,
+    }),
+    regex: {
+      regex: "database system is ready to accept connections",
+      channel: "stderr",
+    },
   },
-  reset: {
-    command: "docker compose down -v && docker compose up --wait",
-    regex: "Container database-seed-db-1 Healthy",
-  },
-  connectionString: `postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}`,
+  prepare: new Set([
+    { command: new Command({ command: "rm -rf ./pgdata" }) },
+    { command: new Command({ command: "mkdir -p ./pgdata" }) },
+    {
+      command: new Command({ command: "initdb -D ./pgdata" }),
+      regex: { regex: "Success.", channel: "stdout" },
+    },
+    "start-db",
+    {
+      command: new Command({
+        command: "psql -d postgres -f ./init/00_create_user_and_db.sql",
+      }),
+      regex: { regex: "CREATE DATABASE", channel: "stdout" },
+    },
+    {
+      command: new Command({
+        command: `psql "${dbConnectionString}" -f ./init/01_schema.sql`,
+      }),
+      regex: { regex: "CREATE TABLE", channel: "stdout" },
+    },
+    {
+      command: new Command({
+        command: `psql "${dbConnectionString}" -f ./init/02_seed.sql`,
+      }),
+      regex: { regex: "COPY 10000", channel: "stdout" },
+    },
+  ]),
+  reset: new Set([{ command: new Command({ command: "rm -rf ./pgdata" }) }]),
 };
 
 /**

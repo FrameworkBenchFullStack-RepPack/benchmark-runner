@@ -1,9 +1,9 @@
-import { By } from "selenium-webdriver";
 import { Driver } from "selenium-webdriver/firefox";
 import {
   loadPage,
   prepareBrowser,
   profilerWrapper,
+  promisifiedTimeout,
 } from "../utilities/benchmark-utilities";
 import BenchmarkInput from "./benchmark-types";
 import Logger from "../utilities/logging";
@@ -23,6 +23,10 @@ export default async function benchmark(options: BenchmarkInput) {
 
   const performTest = async (driver: Driver) => {
     await loadPage(driver, options.link + "/list/");
+
+    // A short visit
+    Logger.log("debug", "Holding static page for 500ms");
+    await promisifiedTimeout(500);
   };
 
   await profilerWrapper({
